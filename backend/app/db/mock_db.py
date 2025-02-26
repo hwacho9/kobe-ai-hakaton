@@ -7,7 +7,24 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Mock database storage
-mock_data = {"users": {}, "artists": {}, "fan_preferences": [], "event_cache": {}}
+mock_data = {
+    "users": {
+        "1": {
+            "userId": "1",
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "password123",
+            "fullName": "Test User",
+            "profileImage": "https://example.com/profile.jpg",
+            "createdAt": "2024-01-01T00:00:00Z",
+            "updatedAt": "2024-01-01T00:00:00Z",
+            "preferences": ["music", "travel", "food"],
+        },
+    },
+    "artists": {},
+    "fan_preferences": [],
+    "event_cache": {},
+}
 
 
 class MockDB:

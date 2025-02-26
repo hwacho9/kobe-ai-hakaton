@@ -1,138 +1,188 @@
-# Fan Event Prediction App
+# コベ AI ハッカソン プロジェクト
 
-A web application that helps fans plan ahead for their favorite artists' events by predicting upcoming events and associated expenses.
+ファンイベント予測アプリケーション - ファンの好みを分析して最適なイベントを提案するサービスです。
 
-## Project Overview
+## システム構成
 
-This application helps fans:
+-   **フロントエンド**: Next.js, React, TypeScript, Tailwind CSS, Shadcn UI
+-   **バックエンド**: FastAPI, Python, Azure Cosmos DB
 
-- Predict upcoming events based on past patterns and social media activity
-- Calculate and budget for expenses related to these events
-- Track favorite artists and get personalized predictions
+## はじめに
 
-## Tech Stack
+### 前提条件
 
-### Frontend
+-   Docker と Docker Compose がインストールされていること
+-   Git がインストールされていること
 
-- Next.js (React) with TypeScript
-- Zustand for state management
-- Tailwind CSS for styling
-- Radix UI and Shadcn UI for component foundations
-
-### Backend
-
-- FastAPI (Python)
-- Pydantic for data validation
-- JWT for authentication
-- Azure services integration (Cosmos DB, OpenAI, AD B2C)
-
-## Getting Started
-
-### Using Docker (Recommended)
-
-The easiest way to run the application is using Docker:
+### プロジェクトのクローン
 
 ```bash
-# Clone the repository
 git clone <repository-url>
-cd fan-event-prediction-app
-
-# Start the application with Docker Compose
-./start.sh
-# Or run directly:
-# docker-compose up -d
+cd kobe-ai-hakaton
 ```
 
-The frontend will be available at http://localhost:3000
-The backend API will be available at http://localhost:8000 with API documentation at http://localhost:8000/docs
+### 環境変数の設定
 
-### Manual Setup
-
-#### Prerequisites
-
-- Node.js (v16+)
-- Python (v3.9+)
-- npm or yarn
-
-#### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend will be available at http://localhost:3000
-
-#### Backend Setup
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-The backend API will be available at http://localhost:8000 with API documentation at http://localhost:8000/docs
-
-## Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
+ルートディレクトリに `.env` ファイルを作成し、以下の環境変数を設定します：
 
 ```
-# Backend Environment Variables
-SECRET_KEY=your-secret-key
+SECRET_KEY=your_secret_key
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 CORS_ORIGINS=http://localhost:3000
-
-# Azure Services
-AZURE_OPENAI_API_KEY=your-openai-api-key
-AZURE_OPENAI_ENDPOINT=your-openai-endpoint
+AZURE_OPENAI_API_KEY=your_azure_openai_api_key
+AZURE_OPENAI_ENDPOINT=your_azure_openai_endpoint
 AZURE_OPENAI_API_VERSION=2023-05-15
-AZURE_COSMOS_DB_ENDPOINT=your-cosmos-db-endpoint
-AZURE_COSMOS_DB_KEY=your-cosmos-db-key
+AZURE_COSMOS_DB_ENDPOINT=your_cosmos_db_endpoint
+AZURE_COSMOS_DB_KEY=your_cosmos_db_key
 AZURE_COSMOS_DB_DATABASE=fan_events
-
-# Frontend Environment Variables
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-## Features
+### 開発環境の実行
 
-- User authentication and profile management
-- Artist tracking and following
-- Event prediction based on historical data and social media analysis
-- Budget planning and expense tracking
-- Personalized notifications for upcoming events
+開発環境では、ソースコードの変更がリアルタイムで反映されます：
 
-## Project Structure
+```bash
+docker-compose up -d
+```
+
+### 本番環境の実行
+
+本番環境では、最適化されたビルドが使用されます：
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### コンテナの停止
+
+```bash
+docker-compose down
+```
+
+### コンテナの再ビルド
+
+コードを変更した後、コンテナを再ビルドするには：
+
+```bash
+docker-compose up -d --build
+```
+
+## 開発コマンド
+
+### ログの確認
+
+バックエンドのログ：
+
+```bash
+docker logs fan-event-prediction-api
+```
+
+フロントエンドのログ：
+
+```bash
+docker logs fan-event-prediction-ui
+```
+
+### コンテナへのアクセス
+
+バックエンドコンテナにアクセス：
+
+```bash
+docker exec -it fan-event-prediction-api /bin/bash
+```
+
+フロントエンドコンテナにアクセス：
+
+```bash
+docker exec -it fan-event-prediction-ui /bin/sh
+```
+
+### 単一サービスの再起動
+
+バックエンドのみ再起動：
+
+```bash
+docker-compose restart backend
+```
+
+フロントエンドのみ再起動：
+
+```bash
+docker-compose restart frontend
+```
+
+## ディレクトリ構造
 
 ```
-project-root/
-├── frontend/                   # Next.js (TypeScript) frontend
-│   ├── public/                 # Static files (images, fonts, etc.)
-│   ├── src/
-│   │   ├── components/         # Reusable UI components
-│   │   ├── pages/              # Page components (Next.js routing)
-│   │   ├── styles/             # CSS/stylesheets
-│   │   └── utils/              # API client, utility functions
-│   ├── Dockerfile              # Docker configuration for frontend
-├── backend/                    # FastAPI (Python) backend
+kobe-ai-hakaton/
+├── backend/
 │   ├── app/
-│   │   ├── api/                # API endpoints
-│   │   ├── core/               # Core settings and security
-│   │   ├── models/             # Database models
-│   │   ├── schemas/            # Pydantic schemas
-│   │   ├── services/           # Business logic
-│   │   └── utils/              # Utility functions
-│   ├── Dockerfile              # Docker configuration for backend
-├── docker-compose.yml          # Docker Compose configuration
-├── .env                        # Environment variables
-└── start.sh                    # Startup script
+│   │   ├── db/             # データベース関連コード
+│   │   ├── models/         # データモデル
+│   │   ├── routers/        # APIルーター
+│   │   ├── services/       # ビジネスロジック
+│   │   └── utils/          # ユーティリティ関数
+│   ├── Dockerfile          # バックエンド Docker 設定
+│   └── requirements.txt    # Python 依存関係
+├── frontend/
+│   ├── src/
+│   │   ├── components/     # Reactコンポーネント
+│   │   ├── pages/          # ページコンポーネント
+│   │   ├── styles/         # スタイルシート
+│   │   └── utils/          # ユーティリティ関数
+│   ├── Dockerfile          # フロントエンド本番用 Docker 設定
+│   ├── Dockerfile.dev      # フロントエンド開発用 Docker 設定
+│   └── package.json        # Node.js 依存関係
+├── docker-compose.yml      # 開発用 Docker Compose 設定
+└── docker-compose.prod.yml # 本番用 Docker Compose 設定
 ```
 
-## License
+## API エンドポイント
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### 認証
+
+-   `POST /api/auth/register` - ユーザー登録
+-   `POST /api/auth/login` - ログイン
+
+### ファンの好み
+
+-   `GET /api/fan-preferences/` - ファンの好み一覧取得
+-   `POST /api/fan-preferences/` - ファンの好み追加
+-   `PUT /api/fan-preferences/{preference_id}` - ファンの好み更新
+-   `DELETE /api/fan-preferences/{preference_id}` - ファンの好み削除
+
+### イベント
+
+-   `GET /api/events/` - イベント一覧取得
+-   `GET /api/events/predict` - ユーザーに適したイベント予測
+
+## トラブルシューティング
+
+### Cosmos DB 接続の問題
+
+Cosmos DB 接続に問題がある場合、バックエンドは自動的にモック DB に切り替わります。実際の Cosmos DB を使用するには、環境変数に正しいエンドポイントとキーを設定する必要があります。
+
+### TypeScript エラー
+
+開発中に TypeScript エラーが発生した場合、次のコマンドを実行して型定義を更新します：
+
+```bash
+docker exec -it fan-event-prediction-ui npm install -D @types/react @types/react-dom @types/node
+```
+
+### ビルドエラー
+
+ビルドエラーが発生した場合、コンテナログを確認して問題を特定します：
+
+```bash
+docker logs fan-event-prediction-ui
+```
+
+コンテナを完全に再ビルドする必要がある場合：
+
+```bash
+docker-compose down
+docker-compose up -d --build
+```
