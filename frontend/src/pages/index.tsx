@@ -5,6 +5,7 @@ import SavingsCircle from "../components/SavingsCircle";
 import IdolList from "../components/IdolList";
 import SavingsList from "../components/SavingsList";
 import Footer from "../components/Footer";
+import AddSavingButton from "../components/AddSavingButton";
 
 type HomeProps = {
   idols: Idol[];
@@ -21,6 +22,7 @@ export default function Home({ idols = [], savings = [] }: HomeProps) {
       <IdolList idols={idols} />
       <SavingsList savings={savings} />
       <Footer />
+      <AddSavingButton />
     </div>
   );
 }
