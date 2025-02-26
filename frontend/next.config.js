@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  distDir: '.next',
   async rewrites() {
     return [
       {
@@ -8,10 +9,10 @@ const nextConfig = {
         destination: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/:path*'
       }
     ]
-  },
-  images: {
-    domains: ['localhost']
-  }
-}
+    },
+    images: {
+        domains: ["localhost"],
+    },
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig;

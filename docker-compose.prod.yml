@@ -6,8 +6,6 @@ services:
         container_name: fan-event-prediction-api
         ports:
             - "8000:8000"
-        volumes:
-            - ./backend:/app
         environment:
             - SECRET_KEY=${SECRET_KEY:-supersecretkey}
             - ALGORITHM=${ALGORITHM:-HS256}
@@ -24,14 +22,10 @@ services:
     frontend:
         build:
             context: ./frontend
-            dockerfile: Dockerfile.dev
+            dockerfile: Dockerfile
         container_name: fan-event-prediction-ui
         ports:
             - "3000:3000"
-        volumes:
-            - ./frontend:/app
-            - /app/node_modules
-            - /app/.next
         environment:
             - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:3000}
         depends_on:

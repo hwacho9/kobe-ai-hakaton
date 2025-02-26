@@ -15,26 +15,27 @@
     "@radix-ui/react-tabs": "^1.0.4",
     "axios": "^1.6.2",
     "class-variance-authority": "^0.7.0",
-    "clsx": "^2.0.0",
     "lucide-react": "^0.294.0",
     "next": "14.0.3",
     "nuqs": "^1.15.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tailwind-merge": "^2.1.0",
-    "tailwindcss-animate": "^1.0.7",
-    "zustand": "^4.4.7"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@types/node": "^20.10.3",
-    "@types/react": "^18.2.42",
-    "@types/react-dom": "^18.2.17",
+    "@types/next": "^8.0.7",
+    "@types/node": "^20.17.19",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
     "autoprefixer": "^10.4.16",
+    "clsx": "^2.1.1",
     "eslint": "^8.55.0",
     "eslint-config-next": "14.0.3",
     "postcss": "^8.4.32",
     "stylus": "^0.62.0",
+    "tailwind-merge": "^3.0.2",
     "tailwindcss": "^3.3.6",
-    "typescript": "5.7.3"
+    "typescript": "^5.3.2",
+    "zustand": "^5.0.3"
   }
 }
