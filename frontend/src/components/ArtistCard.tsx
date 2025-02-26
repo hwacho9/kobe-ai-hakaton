@@ -23,28 +23,13 @@ export function ArtistCard({
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-md p-4 transition-all ${
-        isSelected ? "ring-2 ring-primary" : ""
-      } cursor-pointer`}
+      className={`bg-white border border-gray-200 rounded-lg shadow-sm p-3 transition-all ${
+        isSelected ? "ring-2 ring-blue-500" : ""
+      } cursor-pointer w-32 h-32 flex items-center justify-center`}
       onClick={handleClick}
     >
-      <div className="flex justify-center mb-3">
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={name}
-            width={120}
-            height={120}
-            className="rounded-full object-cover"
-          />
-        ) : (
-          <div className="w-[120px] h-[120px] rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-500">
-            {name.charAt(0)}
-          </div>
-        )}
-      </div>
       <div className="text-center">
-        <h3 className="font-semibold text-lg">{name}</h3>
+        <h3 className="font-semibold text-base">{name}</h3>
       </div>
     </div>
   );
