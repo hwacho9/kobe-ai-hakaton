@@ -1,0 +1,21 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 의존성 설치를 위한 파일만 먼저 복사
+COPY package.json package-lock.json* ./
+
+# 의존성 설치
+RUN npm ci
+
+# 타입스크립트 관련 패키지가 올바르게 설치되었는지 확인
+RUN npm list typescript || npm install -D typescript@latest
+RUN npm list @types/react || npm install -D @types/react@latest
+RUN npm list @types/node || npm install -D @types/node@latest
+RUN npm list @types/react-dom || npm install -D @types/react-dom@latest
+
+# node-fetch 설치 (필요한 경우)
+RUN npm install node-fetch
+
+# Next.js 개발 서버 실행
+CMD ["npm", "run", "dev"] 
