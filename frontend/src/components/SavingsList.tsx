@@ -7,15 +7,17 @@ type SavingsListProps = {
 export default function SavingsList({ savings }: SavingsListProps) {
   return (
     <section className="mb-8">
-      <h2 className="text-xl font-semibold mb-2">前月までの貯金額</h2>
-      <ul>
+      <h2 className="text-lg font-semibold mb-2">前月までの貯金額</h2>
+      <div className="flex flex-col items-center">
         {savings.map((saving) => (
-          <li key={saving.month} className="mb-2">
-            <span>{saving.month}: </span>
-            <span>{saving.amount}円</span>
-          </li>
+          <div
+            key={saving.month}
+            className="w-64 h-12 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center mb-2"
+          >
+            <span>{saving.month}</span>
+          </div>
         ))}
-      </ul>
+      </div>
     </section>
   );
 }

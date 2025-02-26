@@ -34,6 +34,16 @@ export const getStaticProps: GetStaticProps = async () => {
   const savings: MonthlySaving[] = [
     { month: "2023-01", amount: 50000 },
     { month: "2023-02", amount: 60000 },
+    { month: "2023-03", amount: 70000 },
+    { month: "2023-04", amount: 80000 },
+    { month: "2023-05", amount: 90000 },
+    { month: "2023-06", amount: 100000 },
+    { month: "2023-07", amount: 110000 },
+    { month: "2023-08", amount: 120000 },
+    { month: "2023-09", amount: 130000 },
+    { month: "2023-10", amount: 140000 },
+    { month: "2023-11", amount: 150000 },
+    { month: "2023-12", amount: 160000 },
   ];
 
   return {
