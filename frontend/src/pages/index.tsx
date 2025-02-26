@@ -15,7 +15,9 @@ export default function Home({ idols = [], savings = [] }: HomeProps) {
   return (
     <div className="container mx-auto p-4">
       <Header />
-      <SavingsCircle />
+      <div className="w-full md:w-1/2">
+        <SavingsCircle />
+      </div>
       <IdolList idols={idols} />
       <SavingsList savings={savings} />
       <Footer />
