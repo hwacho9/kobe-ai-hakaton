@@ -22,15 +22,15 @@ services:
         restart: unless-stopped
 
     # frontend:
-    #   build: ./frontend
-    #   container_name: fan-event-prediction-ui
-    #   ports:
-    #     - "3000:3000"
-    #   volumes:
-    #     - ./frontend:/app
-    #     - /app/node_modules
-    #   environment:
-    #     - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-    #   depends_on:
-    #     - backend
-    #   restart: unless-stopped
+    #     build: ./frontend
+    #     container_name: fan-event-prediction-ui
+    #     ports:
+    #         - "3000:3000"
+    #     volumes:
+    #         - ./frontend:/app
+    #         - /app/node_modules
+    #     environment:
+    #         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    #     depends_on:
+    #         - backend
+    #     restart: unless-stopped
