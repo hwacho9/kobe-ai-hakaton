@@ -14,7 +14,7 @@ type HomeProps = {
 
 export default function Home({ idols = [], savings = [] }: HomeProps) {
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 bg-gray-900 text-white">
       <Header />
       <div className="w-full md:w-1/2">
         <SavingsCircle />

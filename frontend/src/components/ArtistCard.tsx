@@ -23,9 +23,9 @@ export function ArtistCard({
 
   return (
     <div
-      className={`bg-white border border-gray-200 rounded-lg shadow-sm p-3 transition-all ${
+      className={`bg-gray-800 border border-gray-700 rounded-lg shadow-sm p-3 transition-all ${
         isSelected ? "ring-2 ring-blue-500" : ""
-      } cursor-pointer w-32 h-32 flex items-center justify-center`}
+      } cursor-pointer w-32 h-32 flex items-center justify-center text-white`}
       onClick={handleClick}
     >
       <div className="text-center">

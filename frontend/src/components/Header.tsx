@@ -9,13 +9,13 @@ export default function Header() {
   };
 
   return (
-    <header className="flex justify-between items-center mb-4 border-b border-gray-200">
+    <header className="flex justify-between items-center mb-4 border-b border-gray-700">
       <div className="text-xl">ソンファンさん</div>
       <h1 className="text-xl font-bold flex-grow text-center">オタ活</h1>
       <div className="relative">
         <Bell
           className={`h-6 w-6 cursor-pointer ${
-            hasNotification ? "text-gray-800" : "text-gray-500"
+            hasNotification ? "text-gray-300" : "text-gray-500"
           }`}
           onClick={toggleNotification}
         />
