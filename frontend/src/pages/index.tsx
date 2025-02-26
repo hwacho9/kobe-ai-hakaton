@@ -12,8 +12,6 @@ export default function Home() {
           name="description"
           content="Plan ahead for your favorite artist's events"
         />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="flex flex-col min-h-screen p-8">
         <main className="flex-1 flex flex-col items-center justify-center py-8">
