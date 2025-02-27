@@ -41,6 +41,46 @@ const MOCK_EVENTS = {
     ],
 };
 
+export interface UpcomingEvent {
+    event_id: string;
+    event_type: string;
+    location: string;
+    date: string;
+    estimated_cost: {
+        transportation: number;
+        ticket: number;
+        hotel: number;
+        other: number;
+    };
+    total_estimated: number;
+    confidence: string;
+}
+
+export interface UpcomingGood {
+    goods_id: string;
+    name: string;
+    release_date: string;
+    estimated_price: number;
+}
+
+export interface CostData {
+    id: string;
+    user_id: string;
+    artist: string;
+    calculation_date: string;
+    upcoming_events: UpcomingEvent[];
+    upcoming_goods: UpcomingGood[];
+    total_estimated: number;
+    recommendation: string;
+    saved_at: string;
+}
+
+export interface UserCostsResponse {
+    costs: CostData[];
+    total_estimated: number;
+    count: number;
+}
+
 /**
  * 사용자의 선호도에 기반한 예정된 이벤트를 가져오는 함수
  * @returns 예정된 이벤트 정보
@@ -187,6 +227,48 @@ export async function saveCostData(costData: any): Promise<any> {
         return data;
     } catch (error: any) {
         console.error("費用データ保存エラー:", error);
+        throw error;
+    }
+}
+
+/**
+ * 사용자의 저장된 비용 데이터를 가져오는 함수
+ * @returns 사용자의 저장된 비용 데이터
+ */
+export async function getUserEventCosts(): Promise<UserCostsResponse> {
+    try {
+        // 실제 API 호출
+        const token = localStorage.getItem("auth-storage")
+            ? JSON.parse(localStorage.getItem("auth-storage") || "{}").state
+                  ?.token
+            : null;
+
+        if (!token) {
+            throw new Error("認証トークンがありません");
+        }
+
+        console.log("Fetching user cost data from backend");
+
+        const response = await fetch(`${API_URL}/api/events/user-costs`, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+        });
+
+        console.log("Get user costs response status:", response.status);
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Get user costs error response:", data);
+            throw new Error(data.detail || "費用データの取得に失敗しました");
+        }
+
+        return data;
+    } catch (error: any) {
+        console.error("費用データ取得エラー:", error);
         throw error;
     }
 }

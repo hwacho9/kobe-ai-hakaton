@@ -734,3 +734,50 @@ async def get_events_upcoming_legacy():
         # print(json.dumps(parsed_data, indent=2, ensure_ascii=False))  # 整形して表示
 
     return parsed_data
+
+
+# 사용자의 이벤트 비용 데이터를 가져오는 API
+@app.get("/api/events/user-costs")
+async def get_user_event_costs(current_user: dict = Depends(get_current_user)):
+    """
+    사용자의 저장된 이벤트 비용 데이터를 가져옵니다.
+    최신 데이터를 우선적으로 가져옵니다.
+    """
+    try:
+        # 사용자 ID 가져오기
+        user_id = current_user.get("userId")
+
+        # DB에서 사용자 이벤트 비용 데이터 가져오기
+        collection = await get_collection("event_costs")
+        if not collection:
+            return {"message": "데이터를 가져올 수 없습니다.", "costs": []}
+
+        # 사용자 ID로 비용 데이터 쿼리
+        query = (
+            f"SELECT * FROM c WHERE c.user_id = '{user_id}' ORDER BY c.saved_at DESC"
+        )
+        cost_items = list(
+            collection.query_items(query=query, enable_cross_partition_query=True)
+        )
+
+        # 총 예상 비용 합계 계산
+        total_estimated = sum(
+            item.get("total_estimated", 0)
+            for item in cost_items
+            if "total_estimated" in item
+        )
+
+        return {
+            "costs": cost_items,
+            "total_estimated": total_estimated,
+            "count": len(cost_items),
+        }
+
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"費用データの取得中にエラーが発生しました: {str(e)}",
+        )
