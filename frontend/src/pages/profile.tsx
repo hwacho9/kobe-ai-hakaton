@@ -11,7 +11,6 @@ import Image from "next/image";
 const ARTIST_IMAGE_MAP: Record<string, string> = {
   blackpink: "/images/blackpink.jpg",
   bts: "/images/bts.jpg",
-  // 必要に応じて追加
 };
 
 export default function ProfilePage() {
@@ -64,17 +63,18 @@ export default function ProfilePage() {
     );
   }
 
-  // ユーザー情報
   const user = profileData?.user || authUser;
   const area = profileData?.area || "未設定";
   const interests = profileData?.content_interests || [];
   const artistPreferences = user?.preferences || [];
+  const travelDistances = ["国内", "アジア", "世界"];
 
   return (
     <div className="min-h-screen bg-black text-white">
       <ProfileHeader />
 
-      <div className="container max-w-md mx-auto px-4 pb-20">
+      {/* コンテナの下部パディングを pb-8 に調整 */}
+      <div className="container max-w-md mx-auto px-4 pb-8">
         {/* ユーザー情報カード */}
         <div className="bg-white text-black rounded-lg shadow-md p-4 mt-4 mb-6">
           <h2 className="text-lg font-bold mb-1">
@@ -87,7 +87,7 @@ export default function ProfilePage() {
           </Button>
         </div>
 
-        {/* 好きなアーティスト (画像付き) → タイトルを「Artist」に変更 */}
+        {/* 好きなアーティスト */}
         <h3 className="text-base font-semibold mb-2">Artist</h3>
         <div className="flex space-x-4 mb-6">
           {artistPreferences.map((pref: any) => {
@@ -111,31 +111,52 @@ export default function ProfilePage() {
               </div>
             );
           })}
-          {/* 追加ボタン (+) */}
           <div className="w-20 h-20 bg-white text-black rounded-md flex items-center justify-center">
             +
           </div>
         </div>
+      </div>
 
-        {/* イベントタイプ → Artist より下に配置 */}
-        <h3 className="text-base font-semibold mb-2">イベントタイプ</h3>
-        <div className="flex space-x-2 overflow-x-auto mb-6">
+      {/* 推し活スタイルのタイトルをコンテナ外に表示 */}
+      <h3 className="text-base font-semibold mb-2 px-4">推し活スタイル</h3>
+
+      {/* イベントタイプのカード */}
+      <div className="bg-gradient-to-b from-pink-400 to-pink-200 w-full px-4 py-6 rounded-t-3xl mb-4">
+        <h3 className="text-base font-semibold mb-2 text-black">
+          イベントタイプ
+        </h3>
+        <div className="flex space-x-2 overflow-x-auto">
           {interests.length > 0 ? (
             interests.map((item: string) => (
               <div
                 key={item}
-                className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm whitespace-nowrap"
+                className="bg-white text-black px-2 py-1 rounded-full text-sm whitespace-nowrap"
               >
                 {item}
               </div>
             ))
           ) : (
-            <span className="text-gray-500">未設定</span>
+            <span className="text-black">未設定</span>
           )}
         </div>
+      </div>
 
-        <div className="flex justify-center">
-          <Button onClick={() => router.push("/")}>ホームに戻る</Button>
+      {/* 遠征距離のカード */}
+      <div className="bg-gradient-to-b from-pink-400 to-pink-200 w-full px-4 py-6 rounded-t-3xl -mt-4">
+        <h3 className="text-base font-semibold mb-2 text-black">遠征距離</h3>
+        <div className="flex space-x-2 overflow-x-auto">
+          {travelDistances.length > 0 ? (
+            travelDistances.map((item: string) => (
+              <div
+                key={item}
+                className="bg-white text-black px-2 py-1 rounded-full text-sm whitespace-nowrap"
+              >
+                {item}
+              </div>
+            ))
+          ) : (
+            <span className="text-black">未設定</span>
+          )}
         </div>
       </div>
 
