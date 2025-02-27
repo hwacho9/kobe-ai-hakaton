@@ -14,6 +14,12 @@ import datetime
 endpoint = os.getenv("ENDPOINT_URL", "https://room4-open-ai.openai.azure.com/")  
 deployment = os.getenv("DEPLOYMENT_NAME", "gpt-4o")  
 subscription_key = os.getenv("AZURE_OPENAI_API_KEY")  
+# キーベースの認証を使用して Azure OpenAI Service クライアントを初期化する    
+client = AzureOpenAI(  
+    azure_endpoint=endpoint,  
+    api_key=subscription_key,  
+    api_version="2024-05-01-preview",
+)
 
 app = FastAPI(
     title="Kobe AI API",
@@ -65,14 +71,7 @@ async def test_endpoint():
 
 # Add your API routes here
 @app.get("/events/upcoming")
-async def get_events_upcoming():
-    # キーベースの認証を使用して Azure OpenAI Service クライアントを初期化する    
-    client = AzureOpenAI(  
-        azure_endpoint=endpoint,  
-        api_key=subscription_key,  
-        api_version="2024-05-01-preview",
-    )
-        
+async def get_events_upcoming():        
     # IMAGE_PATH = "YOUR_IMAGE_PATH"
     # encoded_image = base64.b64encode(open(IMAGE_PATH, 'rb').read()).decode('ascii')
 
@@ -197,6 +196,107 @@ async def get_events_upcoming():
     match = re.search(r"```json\n(.*?)\n```", response_text, re.DOTALL)
     if match:
         json_data = match.group(1)
+        parsed_data = json.loads(json_data)  # JSONとして読み込む
+        # print(json.dumps(parsed_data, indent=2, ensure_ascii=False))  # 整形して表示
+        return parsed_data
+    
+
+@app.get("/events/costs")
+async def get_events_costs( region: str, event_type: str, distance: str, date: str):        
+    # IMAGE_PATH = "YOUR_IMAGE_PATH"
+    # encoded_image = base64.b64encode(open(IMAGE_PATH, 'rb').read()).decode('ascii')
+
+    #チャット プロンプトを準備する 
+    chat_prompt = [
+        {
+            "role": "system",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "情報を見つけるのに役立つ AI アシスタントです。"
+                }
+            ]
+        },
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": event_type + "にかかる費用を合計してください"
+                },
+                {
+                    "type": "text",
+                    "text": "現在地は" + region + "です"
+                },
+                {
+                    "type": "text",
+                    "text": distance + "までの往復にかかる費用と宿泊する費用を合計してcostとしてください"
+                },
+                {
+                    "type": "text",
+                    "text": date + "のうちより過去に近いのものをdateとしてください"
+                },
+                {
+                    "type": "text",
+                    "text": "形式は以下のようにjson型にしてください"
+                },
+                {
+                    "type": "text",
+                    "text": "{"
+                },
+                {
+                    "type": "text",
+                    "text": "  \"date\": \"2025-03\","
+                },
+                {
+                    "type": "text",
+                    "text": "  \"money\": \"300000\","
+                },
+                {
+                    "type": "text",
+                    "text": "}"
+                },
+                {
+                    "type": "text",
+                    "text": "計算過程は省いてください"
+                }
+            ]
+        },
+        {
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "\n{\n  \"date\": \"2023-11\",\n  \"money\": \"400000\"\n}"
+                }
+            ]
+        }
+    ] 
+        
+    # 音声認識が有効になっている場合は音声結果を含める  
+    messages = chat_prompt  
+        
+    # 入力候補を生成する  
+    completion = client.chat.completions.create(  
+        model=deployment,
+        messages=messages,
+        max_tokens=800,  
+        temperature=0.7,  
+        top_p=0.95,  
+        frequency_penalty=0,  
+        presence_penalty=0,
+        stop=None,  
+        stream=False
+    )
+
+    print(completion)
+
+    # completionから実際のテキスト内容を取得
+    response_text = completion.choices[0].message.content
+
+    match = re.search(r"{\s*\"date\":.*?}", response_text, re.DOTALL)
+    if match:
+        json_data = match.group(0)
         parsed_data = json.loads(json_data)  # JSONとして読み込む
         # print(json.dumps(parsed_data, indent=2, ensure_ascii=False))  # 整形して表示
 
