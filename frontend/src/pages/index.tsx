@@ -1,5 +1,5 @@
 import { GetStaticProps } from "next";
-import { Idol, MonthlySaving } from "../types";
+import { Idol } from "../types";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
@@ -16,11 +16,48 @@ import {
   getUserEventInfo,
 } from "@/utils/mockApi";
 
+type Event = {
+  event_id: string;
+  event_name: string;
+  date: string;
+  artist: {
+    artist_id: string;
+    artist_name: string;
+  };
+};
+
 type HomeProps = {
   idols: Idol[];
   dashboardData: any;
   userInfo: any;
-  userEventInfo: any[];
+  userEventInfo: Event[];
+  // fans-user-event-info のデータを events として利用
+  events: Event[];
+};
+
+export const getStaticProps: GetStaticProps = async () => {
+  // サンプルとしてのアイドルデータ（必要に応じて調整）
+  const idols: Idol[] = [
+    { id: "1", name: "BLACKPINK", image: "/images/idolA.jpg" },
+    { id: "2", name: "BTS", image: "/images/idolB.jpg" },
+  ];
+
+  const dashboardData = await getDashboardData();
+  const userInfo = await getUserInfo();
+  const userEventInfo = await getUserEventInfo();
+
+  // fans-user-event-info のデータを events として使用
+  const events = userEventInfo;
+
+  return {
+    props: {
+      idols,
+      dashboardData,
+      userInfo,
+      userEventInfo,
+      events,
+    },
+  };
 };
 
 export default function Home({
@@ -28,6 +65,7 @@ export default function Home({
   dashboardData,
   userInfo,
   userEventInfo,
+  events,
 }: HomeProps) {
   const router = useRouter();
   const { isAuthenticated, user, logout } = useAuthStore();
@@ -45,8 +83,6 @@ export default function Home({
   if (!userInfo) {
     return <div>Loading...</div>;
   }
-
-  const remainingSavings = userInfo.savings_goal - userInfo.total_savings;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white w-screen">
@@ -84,38 +120,23 @@ export default function Home({
           </div>
         )}
 
-        <div className="w-full">
+        <div className="w-full mb-6">
           <SavingsCircle
             totalSavings={userInfo.total_savings}
             savingsGoal={userInfo.savings_goal}
             userEvents={userEventInfo}
           />
         </div>
-        <IdolList idols={idols} />
+
+        {/* イベント情報を ArtistCard 経由で表示 */}
+        <IdolList events={events} />
+
+        {/* 先月までの貯金額を表示 */}
         <SavingsList savings={userInfo.monthly_savings} />
+
         <Footer />
         <AddSavingButton />
       </div>
     </div>
   );
 }
-
-export const getStaticProps: GetStaticProps = async () => {
-  const idols: Idol[] = [
-    { id: "1", name: "BLACKPINK", image: "/images/idolA.jpg" },
-    { id: "2", name: "BTS", image: "/images/idolB.jpg" },
-  ];
-
-  const dashboardData = await getDashboardData();
-  const userInfo = await getUserInfo();
-  const userEventInfo = await getUserEventInfo();
-
-  return {
-    props: {
-      idols,
-      dashboardData,
-      userInfo,
-      userEventInfo,
-    },
-  };
-};
