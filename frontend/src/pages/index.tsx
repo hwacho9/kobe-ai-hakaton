@@ -30,6 +30,10 @@ export default function Home({ idols = [], savings = [] }: HomeProps) {
         router.push("/login");
     };
 
+    const handleEventPrediction = () => {
+        router.push("/events-prediction");
+    };
+
     return (
         <div className="container mx-auto p-4 bg-gray-900 text-white">
             <div className="flex justify-between items-center mb-6">
@@ -41,6 +45,11 @@ export default function Home({ idols = [], savings = [] }: HomeProps) {
                                 <span className="mr-2">
                                     Hi, {user?.username || "user"}
                                 </span>
+                                <button
+                                    onClick={handleEventPrediction}
+                                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md transition-colors mr-2">
+                                    イベント予測
+                                </button>
                                 <button
                                     onClick={handleLogout}
                                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors">
