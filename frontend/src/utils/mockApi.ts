@@ -1,10 +1,10 @@
-import dashboardData from "@/mocks/dashbord.json";
-import eventsHistoryData from "@/mocks/events.history.json";
-import eventsUpcomingData from "@/mocks/events-upcoming.json";
-import fansRegisterData from "@/mocks/fans-register.json";
-import fansUserInfoData from "@/mocks/fans-user-info.json";
-import goodsUpcomingData from "@/mocks/goods-upcoming.json";
-import userEventInfoData from "../mocks/fans-user-event-info.json";
+import dashboardData from "../../mocks/dashbord.json";
+import eventsUpcomingData from "../../mocks/events-upcoming.json";
+import eventsHistoryData from "../../mocks/events-history.json";
+import goodsUpcomingData from "../../mocks/goods-upcoming.json";
+import fansRegisterData from "../../mocks/fans-register.json";
+import fansUserInfoData from "../../mocks/fans-user-info.json";
+import userEventInfoData from "../../mocks/fans-user-event-info.json";
 
 export const getDashboardData = async () => {
   return dashboardData;
