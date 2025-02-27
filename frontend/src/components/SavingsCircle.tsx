@@ -52,7 +52,7 @@ export default function SavingsCircle({
   }, [totalSavings, savingsGoal, userEvents]);
 
   // 円のサイズと中心
-  const radius = 80;
+  const radius = 65;
   const center = 100;
   const strokeWidthBg = 8;
   const circumference = 2 * Math.PI * radius;
@@ -81,7 +81,7 @@ export default function SavingsCircle({
           </defs>
 
           {/* 円の上部に「目標: 〇〇円」を表示 */}
-          <text x={center} y="40" fill="white" fontSize="7" textAnchor="middle">
+          <text x={center} y="10" fill="white" fontSize="7" textAnchor="middle">
             目標: {savingsGoal.toLocaleString()}円
           </text>
 
@@ -103,7 +103,7 @@ export default function SavingsCircle({
             r={radius}
             fill="none"
             stroke="url(#progressGradient)"
-            strokeWidth="6"
+            strokeWidth="10"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
