@@ -30,7 +30,7 @@ export function ArtistCard({
 
   return (
     <div
-      className={`flex-shrink-0 w-24 h-24 rounded-lg flex items-center justify-center cursor-pointer transition-colors
+      className={`flex-shrink-0 w-24 h-24 rounded-lg flex items-center justify-center cursor-pointer transition-colors filter drop-shadow-xl
         ${isSelected ? "border-2 border-pink-500" : "border border-gray-700"}
         bg-black text-white`}
       onClick={handleClick}

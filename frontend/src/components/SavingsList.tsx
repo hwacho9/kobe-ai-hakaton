@@ -18,7 +18,7 @@ export default function SavingsList({ savings }: SavingsListProps) {
           return (
             <div
               key={saving.month}
-              className="w-72 h-12 bg-white border border-gray-300 rounded-lg flex items-center px-4 mb-2"
+              className="w-72 h-12 bg-white border border-gray-300 rounded-lg flex items-center px-4 mb-2 filter drop-shadow-lg"
             >
               <div className="w-1/3 text-left">
                 <span className="text-xs text-gray-400">{displayMonth}</span>

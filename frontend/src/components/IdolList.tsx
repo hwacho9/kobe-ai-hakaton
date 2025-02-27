@@ -12,7 +12,7 @@ export default function IdolList({ idols }: IdolListProps) {
         {idols.map((idol) => (
           <ArtistCard key={idol.id} id={idol.id} name={idol.name} />
         ))}
-        <div className="bg-white border border-white rounded-lg shadow-sm transition-all cursor-pointer w-24 h-24 flex items-center justify-center">
+        <div className="bg-white border border-white rounded-lg filter drop-shadow-lg transition-all cursor-pointer w-24 h-24 flex items-center justify-center">
           <div className="text-center">
             <h3 className="font-semibold text-base text-black">+</h3>
           </div>
