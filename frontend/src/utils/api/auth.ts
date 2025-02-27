@@ -1,4 +1,4 @@
-import { LoginResponse, RegisterResponse } from "@/types/auth";
+import { LoginResponse, RegisterResponse, User } from "@/types/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -10,24 +10,36 @@ export async function registerUser(
     email: string,
     password: string
 ): Promise<RegisterResponse> {
-    const response = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            username,
-            email,
-            password,
-        }),
-    });
+    try {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, email, password }),
+        });
 
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "회원가입 중 오류가 발생했습니다");
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Registration failed");
+        }
+
+        const data = await response.json();
+
+        // Create a full RegisterResponse from backend data
+        return {
+            email: email,
+            username: username,
+            userId: data.userId || "user-id",
+            fullName: null,
+            profileImage: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            preferences: [],
+        };
+    } catch (error) {
+        throw error;
     }
-
-    return response.json();
 }
 
 /**
@@ -37,23 +49,38 @@ export async function loginUser(
     email: string,
     password: string
 ): Promise<LoginResponse> {
-    const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            email,
-            password,
-        }),
-    });
+    try {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email, password }),
+        });
 
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "로그인 중 오류가 발생했습니다");
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Login failed");
+        }
+
+        const data = await response.json();
+
+        // Create a full LoginResponse from the backend's access_token
+        return {
+            access_token: data.access_token,
+            token_type: "bearer",
+            user: {
+                userId: "user-id",
+                username: email.split("@")[0],
+                email: email,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                preferences: [],
+            },
+        };
+    } catch (error) {
+        throw error;
     }
-
-    return response.json();
 }
 
 /**

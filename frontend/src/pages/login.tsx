@@ -1,50 +1,87 @@
 import React, { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/router";
-import { useAuthStore } from "@/utils/stores/authStore";
+import Link from "next/link";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { useAuthStore } from "@/utils/stores/authStore";
+import { testCredentials } from "@/utils/mockAuthData";
+
+interface FormValues {
+    email: string;
+    password: string;
+}
 
 const LoginPage = () => {
     const router = useRouter();
-    const { login, isLoading, error, clearError } = useAuthStore();
-
-    const [formData, setFormData] = useState({
+    const { login, error, clearError, isLoading } = useAuthStore();
+    const [loginSuccess, setLoginSuccess] = useState(false);
+    const [formValues, setFormValues] = useState<FormValues>({
         email: "",
         password: "",
     });
-
-    const [formErrors, setFormErrors] = useState({
-        email: "",
-        password: "",
-    });
+    const [formErrors, setFormErrors] = useState<Partial<FormValues>>({});
+    const [touched, setTouched] = useState<
+        Partial<Record<keyof FormValues, boolean>>
+    >({});
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-        setFormErrors((prev) => ({ ...prev, [name]: "" }));
-        clearError();
+        setFormValues((prev) => ({ ...prev, [name]: value }));
+        // Clear errors when typing
+        if (formErrors[name as keyof FormValues]) {
+            setFormErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
     };
 
-    const validateForm = () => {
-        let valid = true;
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        const { name } = e.target;
+        setTouched((prev) => ({ ...prev, [name]: true }));
+        validateField(name as keyof FormValues);
+    };
+
+    const validateField = (field: keyof FormValues) => {
         const newErrors = { ...formErrors };
 
-        if (!formData.email) {
-            newErrors.email = "이메일을 입력해주세요";
-            valid = false;
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = "유효한 이메일 주소를 입력해주세요";
-            valid = false;
+        if (field === "email") {
+            if (!formValues.email) {
+                newErrors.email = "メールアドレスを入力してください";
+            } else if (!/\S+@\S+\.\S+/.test(formValues.email)) {
+                newErrors.email = "無効なメール形式です";
+            } else {
+                newErrors.email = undefined;
+            }
         }
 
-        if (!formData.password) {
-            newErrors.password = "비밀번호를 입력해주세요";
-            valid = false;
+        if (field === "password") {
+            if (!formValues.password) {
+                newErrors.password = "パスワードを入力してください";
+            } else {
+                newErrors.password = undefined;
+            }
         }
 
         setFormErrors(newErrors);
-        return valid;
+    };
+
+    const validateForm = (): boolean => {
+        const newErrors: Partial<FormValues> = {};
+        let isValid = true;
+
+        if (!formValues.email) {
+            newErrors.email = "メールアドレスを入力してください";
+            isValid = false;
+        } else if (!/\S+@\S+\.\S+/.test(formValues.email)) {
+            newErrors.email = "無効なメール形式です";
+            isValid = false;
+        }
+
+        if (!formValues.password) {
+            newErrors.password = "パスワードを入力してください";
+            isValid = false;
+        }
+
+        setFormErrors(newErrors);
+        return isValid;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -52,75 +89,101 @@ const LoginPage = () => {
 
         if (!validateForm()) return;
 
-        try {
-            await login(formData.email, formData.password);
-            router.push("/");
-        } catch (error) {
-            console.error("Login failed:", error);
+        const { success } = await login(formValues.email, formValues.password);
+        if (success) {
+            setLoginSuccess(true);
+            setTimeout(() => {
+                router.push("/");
+            }, 2000);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        로그인
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        또는{" "}
-                        <Link
-                            href="/register"
-                            className="font-medium text-blue-600 hover:text-blue-500">
-                            새 계정 만들기
-                        </Link>
-                    </p>
-                </div>
+        <div className="flex min-h-screen flex-col items-center justify-center p-4">
+            <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-8 shadow-md">
+                <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">
+                    ログイン
+                </h2>
 
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    {error && (
-                        <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded">
-                            {error}
-                        </div>
-                    )}
+                {loginSuccess && (
+                    <div className="mb-4 rounded-md bg-green-100 p-4 text-green-700">
+                        ログイン成功！リダイレクト中...
+                    </div>
+                )}
 
-                    <div className="space-y-4">
+                {error && (
+                    <div className="mb-4 rounded-md bg-red-100 p-4 text-red-700">
+                        {error}
+                        <button
+                            className="ml-2 text-red-500 underline"
+                            onClick={clearError}>
+                            クリア
+                        </button>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
                         <Input
                             id="email"
                             name="email"
                             type="email"
-                            autoComplete="email"
-                            required
-                            label="이메일 주소"
-                            placeholder="user@example.com"
-                            value={formData.email}
+                            label="メール"
+                            placeholder="メールアドレスを入力してください"
                             onChange={handleChange}
-                            error={formErrors.email}
+                            onBlur={handleBlur}
+                            value={formValues.email}
+                            error={touched.email ? formErrors.email : undefined}
                         />
+                    </div>
 
+                    <div className="mb-6">
                         <Input
                             id="password"
                             name="password"
                             type="password"
-                            autoComplete="current-password"
-                            required
-                            label="비밀번호"
-                            placeholder="••••••••"
-                            value={formData.password}
+                            label="パスワード"
+                            placeholder="パスワードを入力してください"
                             onChange={handleChange}
-                            error={formErrors.password}
+                            onBlur={handleBlur}
+                            value={formValues.password}
+                            error={
+                                touched.password
+                                    ? formErrors.password
+                                    : undefined
+                            }
                         />
                     </div>
 
-                    <div>
-                        <Button
-                            type="submit"
-                            className="w-full"
-                            isLoading={isLoading}>
-                            로그인
-                        </Button>
-                    </div>
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        className="w-full"
+                        isLoading={isLoading}>
+                        ログイン
+                    </Button>
                 </form>
+
+                <div className="mt-4 text-center">
+                    <p className="text-gray-600">
+                        アカウントをお持ちでない方は{" "}
+                        <Link
+                            href="/register"
+                            className="text-blue-600 hover:underline">
+                            会員登録
+                        </Link>
+                    </p>
+                </div>
+
+                <div className="mt-6 border-t border-gray-200 pt-4">
+                    <p className="text-center text-sm text-gray-600">
+                        このテストアカウントはログイン機能をテストするために使用できます
+                        <br />
+                        メール: {testCredentials.email}
+                        <br />
+                        パスワード: {testCredentials.password}
+                    </p>
+                </div>
             </div>
         </div>
     );

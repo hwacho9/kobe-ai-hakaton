@@ -4,76 +4,131 @@ import { useRouter } from "next/router";
 import { useAuthStore } from "@/utils/stores/authStore";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { testCredentials } from "@/utils/mockAuthData";
+
+interface FormValues {
+    username: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+}
 
 const RegisterPage = () => {
     const router = useRouter();
-    const { register } = useAuthStore();
-
-    const [formData, setFormData] = useState({
+    const { register, error, clearError, isLoading } = useAuthStore();
+    const [registerSuccess, setRegisterSuccess] = useState(false);
+    const [formValues, setFormValues] = useState<FormValues>({
         username: "",
         email: "",
         password: "",
         confirmPassword: "",
     });
-
-    const [errors, setErrors] = useState({
-        username: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-    });
-
-    const [isLoading, setIsLoading] = useState(false);
+    const [formErrors, setFormErrors] = useState<Partial<FormValues>>({});
+    const [touched, setTouched] = useState<
+        Partial<Record<keyof FormValues, boolean>>
+    >({});
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-
-        // Clear error when user types
-        if (errors[name as keyof typeof errors]) {
-            setErrors((prev) => ({ ...prev, [name]: "" }));
+        setFormValues((prev) => ({ ...prev, [name]: value }));
+        // Clear errors when typing
+        if (formErrors[name as keyof FormValues]) {
+            setFormErrors((prev) => ({ ...prev, [name]: undefined }));
         }
     };
 
-    const validateForm = () => {
-        let valid = true;
-        const newErrors = { ...errors };
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        const { name } = e.target;
+        setTouched((prev) => ({ ...prev, [name]: true }));
+        validateField(name as keyof FormValues);
+    };
 
-        // Validate username
-        if (!formData.username.trim()) {
-            newErrors.username = "Username is required";
-            valid = false;
-        } else if (formData.username.length < 3) {
-            newErrors.username = "Username must be at least 3 characters";
-            valid = false;
+    const validateField = (field: keyof FormValues) => {
+        const newErrors = { ...formErrors };
+
+        if (field === "username") {
+            if (!formValues.username) {
+                newErrors.username = "ユーザー名を入力してください";
+            } else if (formValues.username.length < 3) {
+                newErrors.username =
+                    "ユーザー名は3文字以上である必要があります";
+            } else {
+                newErrors.username = undefined;
+            }
         }
 
-        // Validate email
-        if (!formData.email) {
-            newErrors.email = "Email is required";
-            valid = false;
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = "Email is invalid";
-            valid = false;
+        if (field === "email") {
+            if (!formValues.email) {
+                newErrors.email = "メールアドレスを入力してください";
+            } else if (!/\S+@\S+\.\S+/.test(formValues.email)) {
+                newErrors.email = "無効なメール形式です";
+            } else {
+                newErrors.email = undefined;
+            }
         }
 
-        // Validate password
-        if (!formData.password) {
-            newErrors.password = "Password is required";
-            valid = false;
-        } else if (formData.password.length < 6) {
-            newErrors.password = "Password must be at least 6 characters";
-            valid = false;
+        if (field === "password") {
+            if (!formValues.password) {
+                newErrors.password = "パスワードを入力してください";
+            } else if (formValues.password.length < 8) {
+                newErrors.password =
+                    "パスワードは8文字以上である必要があります";
+            } else {
+                newErrors.password = undefined;
+            }
         }
 
-        // Validate confirm password
-        if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = "Passwords do not match";
-            valid = false;
+        if (field === "confirmPassword") {
+            if (!formValues.confirmPassword) {
+                newErrors.confirmPassword = "パスワードを確認してください";
+            } else if (formValues.confirmPassword !== formValues.password) {
+                newErrors.confirmPassword = "パスワードが一致しません";
+            } else {
+                newErrors.confirmPassword = undefined;
+            }
         }
 
-        setErrors(newErrors);
-        return valid;
+        setFormErrors(newErrors);
+    };
+
+    const validateForm = (): boolean => {
+        const newErrors: Partial<FormValues> = {};
+        let isValid = true;
+
+        if (!formValues.username) {
+            newErrors.username = "ユーザー名を入力してください";
+            isValid = false;
+        } else if (formValues.username.length < 3) {
+            newErrors.username = "ユーザー名は3文字以上である必要があります";
+            isValid = false;
+        }
+
+        if (!formValues.email) {
+            newErrors.email = "メールアドレスを入力してください";
+            isValid = false;
+        } else if (!/\S+@\S+\.\S+/.test(formValues.email)) {
+            newErrors.email = "無効なメール形式です";
+            isValid = false;
+        }
+
+        if (!formValues.password) {
+            newErrors.password = "パスワードを入力してください";
+            isValid = false;
+        } else if (formValues.password.length < 8) {
+            newErrors.password = "パスワードは8文字以上である必要があります";
+            isValid = false;
+        }
+
+        if (!formValues.confirmPassword) {
+            newErrors.confirmPassword = "パスワードを確認してください";
+            isValid = false;
+        } else if (formValues.confirmPassword !== formValues.password) {
+            newErrors.confirmPassword = "パスワードが一致しません";
+            isValid = false;
+        }
+
+        setFormErrors(newErrors);
+        return isValid;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -81,114 +136,138 @@ const RegisterPage = () => {
 
         if (!validateForm()) return;
 
-        setIsLoading(true);
+        const { success } = await register(
+            formValues.username,
+            formValues.email,
+            formValues.password
+        );
 
-        try {
-            const result = await register(
-                formData.username,
-                formData.email,
-                formData.password
-            );
-
-            if (result.success) {
+        if (success) {
+            setRegisterSuccess(true);
+            setTimeout(() => {
                 router.push("/");
-            } else {
-                // Handle server-side validation errors
-                if (result.message) {
-                    if (result.message.includes("email")) {
-                        setErrors((prev) => ({
-                            ...prev,
-                            email: result.message,
-                        }));
-                    } else if (result.message.includes("username")) {
-                        setErrors((prev) => ({
-                            ...prev,
-                            username: result.message,
-                        }));
-                    } else {
-                        alert(result.message);
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("Registration error:", error);
-            alert("An unexpected error occurred. Please try again.");
-        } finally {
-            setIsLoading(false);
+            }, 2000);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        Create your account
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        Or{" "}
+        <div className="flex min-h-screen flex-col items-center justify-center p-4">
+            <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-8 shadow-md">
+                <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">
+                    会員登録
+                </h2>
+
+                {registerSuccess && (
+                    <div className="mb-4 rounded-md bg-green-100 p-4 text-green-700">
+                        登録成功！リダイレクト中...
+                    </div>
+                )}
+
+                {error && (
+                    <div className="mb-4 rounded-md bg-red-100 p-4 text-red-700">
+                        {error}
+                        <button
+                            className="ml-2 text-red-500 underline"
+                            onClick={clearError}>
+                            クリア
+                        </button>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <Input
+                            id="username"
+                            name="username"
+                            type="text"
+                            label="ユーザー名"
+                            placeholder="ユーザー名を入力してください"
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            value={formValues.username}
+                            error={
+                                touched.username
+                                    ? formErrors.username
+                                    : undefined
+                            }
+                        />
+                    </div>
+
+                    <div className="mb-4">
+                        <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            label="メール"
+                            placeholder="メールアドレスを入力してください"
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            value={formValues.email}
+                            error={touched.email ? formErrors.email : undefined}
+                        />
+                    </div>
+
+                    <div className="mb-4">
+                        <Input
+                            id="password"
+                            name="password"
+                            type="password"
+                            label="パスワード"
+                            placeholder="パスワードを入力してください"
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            value={formValues.password}
+                            error={
+                                touched.password
+                                    ? formErrors.password
+                                    : undefined
+                            }
+                        />
+                    </div>
+
+                    <div className="mb-6">
+                        <Input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type="password"
+                            label="パスワード確認"
+                            placeholder="パスワードを再入力してください"
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            value={formValues.confirmPassword}
+                            error={
+                                touched.confirmPassword
+                                    ? formErrors.confirmPassword
+                                    : undefined
+                            }
+                        />
+                    </div>
+
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        className="w-full"
+                        isLoading={isLoading}>
+                        会員登録
+                    </Button>
+                </form>
+
+                <div className="mt-4 text-center">
+                    <p className="text-gray-600">
+                        すでにアカウントをお持ちですか？{" "}
                         <Link
                             href="/login"
-                            className="font-medium text-blue-600 hover:text-blue-500">
-                            sign in to your account
+                            className="text-blue-600 hover:underline">
+                            ログイン
                         </Link>
                     </p>
                 </div>
 
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="rounded-md shadow-sm space-y-4">
-                        <Input
-                            label="Username"
-                            name="username"
-                            type="text"
-                            required
-                            value={formData.username}
-                            onChange={handleChange}
-                            error={errors.username}
-                        />
-
-                        <Input
-                            label="Email Address"
-                            name="email"
-                            type="email"
-                            required
-                            value={formData.email}
-                            onChange={handleChange}
-                            error={errors.email}
-                        />
-
-                        <Input
-                            label="Password"
-                            name="password"
-                            type="password"
-                            required
-                            value={formData.password}
-                            onChange={handleChange}
-                            error={errors.password}
-                        />
-
-                        <Input
-                            label="Confirm Password"
-                            name="confirmPassword"
-                            type="password"
-                            required
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            error={errors.confirmPassword}
-                        />
-                    </div>
-
-                    <div>
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            size="lg"
-                            className="w-full"
-                            isLoading={isLoading}>
-                            Register
-                        </Button>
-                    </div>
-                </form>
+                <div className="mt-6 border-t border-gray-200 pt-4">
+                    <p className="text-center text-sm text-gray-600">
+                        テスト用にログインページのテストアカウントを使用できます。
+                    </p>
+                </div>
             </div>
         </div>
     );

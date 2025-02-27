@@ -55,3 +55,4 @@ class User(UserBase):
                 "updatedAt": "2023-01-01T00:00:00Z",
             }
         }
+        json_encoders = {datetime: lambda dt: dt.isoformat()}
