@@ -7,7 +7,7 @@ from openai import AzureOpenAI
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import api, auth, artists, fan_preferences
+from app.routers import api, auth, artists, fan_preferences, users
 from app.db.database import init_db
 import datetime
 
@@ -42,6 +42,7 @@ app.include_router(api.router)
 app.include_router(auth.router)
 app.include_router(artists.router)
 app.include_router(fan_preferences.router)
+app.include_router(users.router)
 
 
 @app.get("/")

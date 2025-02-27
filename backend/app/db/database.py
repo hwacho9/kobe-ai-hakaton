@@ -83,6 +83,15 @@ class DatabaseService:
 db_service = DatabaseService()
 
 
+# Function to get database instance for use in routers
+def get_database():
+    """
+    Returns the database instance.
+    This function is used by routers to get access to the database.
+    """
+    return db_service.db
+
+
 # Initialize the database on startup
 def init_db():
     if db_service.use_cosmos:
