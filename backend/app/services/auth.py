@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from app.db.database import db_service
 from app.models.user import User, UserCreate
+import uuid
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -29,6 +30,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/token")
 class Token(BaseModel):
     access_token: str
     token_type: str
+    user: Optional[dict] = None
 
 
 class TokenData(BaseModel):
@@ -89,6 +91,10 @@ async def authenticate_user(email: str, password: str):
             logger.warning(f"비밀번호 불일치: {email}")
             return False
 
+        # Ensure userId field exists (for backward compatibility)
+        if "userId" not in user and "id" in user:
+            user["userId"] = user["id"]
+
         logger.info(f"인증 성공: {email}")
         return user
     except Exception as e:
@@ -139,13 +145,16 @@ async def register_user(user_data: UserCreate):
     #         status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
     #     )
 
-    # Create user object
+    # Create user object with all required fields
     user_dict = user_data.dict()
     user_dict["password"] = get_password_hash(user_data.password)
-    user = User(**user_dict)
+    user_dict["userId"] = str(uuid.uuid4())
+    user_dict["createdAt"] = datetime.utcnow()
+    user_dict["updatedAt"] = datetime.utcnow()
+    user_dict["preferences"] = []
 
-    # Save user to database
-    created_user = await db_service.create_user(user.dict())
+    # Save user to database with password field included
+    created_user = await db_service.create_user(user_dict)
 
     # Remove password from response
     if "password" in created_user:
