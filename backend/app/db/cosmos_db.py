@@ -66,7 +66,6 @@ class CosmosDB:
             container_params = {
                 "id": container_id,
                 "partition_key": PartitionKey(path=partition_key_path),
-                "offer_throughput": 100,  # 낮은 처리량으로 설정
             }
 
             if default_ttl is not None:

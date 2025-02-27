@@ -83,14 +83,21 @@ export const useAuthStore = create<AuthState>()(
 
                     if (response.ok) {
                         const data = await response.json();
-                        // 백엔드에서는 user 정보를 반환하지 않으므로 토큰만 저장하고 모의 사용자 정보 생성
+                        // Store token and set authenticated state
                         set({
                             isAuthenticated: true,
                             token: data.access_token,
                             error: null,
                             isLoading: false,
-                            // 모의 사용자 정보 생성
-                            user: createMockUser(email),
+                            // If user data is returned, use it; otherwise create a mock user
+                            user: data.user || {
+                                userId: "user-id",
+                                username: email.split("@")[0],
+                                email: email,
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString(),
+                                preferences: [],
+                            },
                         });
                         return { success: true };
                     } else {

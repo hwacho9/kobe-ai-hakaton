@@ -149,8 +149,16 @@ async def login(user_data: UserLogin):
         access_token = create_access_token(
             data={"sub": user["userId"]}, expires_delta=access_token_expires
         )
+
+        # Remove password from response
+        if "password" in user:
+            user_copy = dict(user)
+            del user_copy["password"]
+        else:
+            user_copy = user
+
         logger.info(f"로그인 성공: {user_data.email}")
-        return {"access_token": access_token, "token_type": "bearer", "user": user}
+        return {"access_token": access_token, "token_type": "bearer", "user": user_copy}
     except HTTPException:
         raise
     except Exception as e:
