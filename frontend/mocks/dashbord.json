@@ -1,0 +1,45 @@
+{
+    "artist": "BLACKPINK",
+    "upcoming_events": [
+      {
+        "event_id": "evt123",
+        "location": "Seoul",
+        "date": "2025-03-15",
+        "estimated_cost": {
+          "transportation": 30000,
+          "ticket": 150000,
+          "hotel": 80000
+        },
+        "total_estimated": 260000,
+        "confidence": "high"
+      },
+      {
+        "event_id": "evt124",
+        "location": "Tokyo",
+        "date": "2025-04-01",
+        "estimated_cost": {
+          "transportation": 40000,
+          "ticket": 160000,
+          "hotel": 100000
+        },
+        "total_estimated": 300000,
+        "confidence": "medium"
+      }
+    ],
+    "upcoming_goods": [
+      {
+        "goods_id": "g123",
+        "name": "Special Edition Album",
+        "release_date": "2025-03-10",
+        "estimated_price": 50000
+      },
+      {
+        "goods_id": "g124",
+        "name": "Limited Edition Poster",
+        "release_date": "2025-03-25",
+        "estimated_price": 20000
+      }
+    ],
+    "recommendation": "ライブとグッズの情報をもとに、約260,000円〜300,000円の予算を準備することをおすすめします。"
+  }
+  

@@ -1,0 +1,23 @@
+{
+  "user_id": "user_abc123",
+  "username": "ソンファ",
+  "email": "fan123@example.com",
+  "preferred_artist": "BLACKPINK",
+  "favorite_contents": ["live", "goods", "album"],
+  "monthly_savings": [
+    {
+      "month": "2025-01",
+      "amount": 50000
+    },
+    {
+      "month": "2025-02",
+      "amount": 60000
+    },
+    {
+      "month": "2025-03",
+      "amount": 70000
+    }
+  ],
+  "total_savings": 180000,
+  "savings_goal": 500000
+}
