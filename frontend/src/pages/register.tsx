@@ -134,18 +134,38 @@ const RegisterPage = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validateForm()) return;
+        // Validate all fields before submission
+        const isValid = Object.keys(formValues).every((key) => {
+            const fieldKey = key as keyof FormValues;
+            validateField(fieldKey);
+            return !formErrors[fieldKey];
+        });
 
-        const { success } = await register(
+        if (!isValid) {
+            // Mark all fields as touched to show errors
+            const allTouched = Object.keys(formValues).reduce(
+                (acc, key) => ({ ...acc, [key]: true }),
+                {}
+            );
+            setTouched(allTouched);
+            return;
+        }
+
+        // Clear any previous errors
+        clearError();
+
+        // Submit the form
+        const result = await register(
             formValues.username,
             formValues.email,
             formValues.password
         );
 
-        if (success) {
+        if (result.success) {
             setRegisterSuccess(true);
+            // Redirect to next step after registration
             setTimeout(() => {
-                router.push("/");
+                router.push("/register-info");
             }, 2000);
         }
     };

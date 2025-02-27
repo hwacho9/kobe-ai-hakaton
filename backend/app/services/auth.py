@@ -152,3 +152,33 @@ async def register_user(user_data: UserCreate):
         del created_user["password"]
 
     return created_user
+
+
+async def update_user_info(user_id: str, user_info):
+    """Update user with additional information after registration."""
+    try:
+        # Get current user
+        user = await db_service.get_user(user_id)
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+
+        # Prepare update data
+        update_data = {
+            "area": user_info.area,
+            "content_interests": user_info.content_interests,
+            "preferences": [],
+        }
+
+        # Add artist preferences
+        for artist_id in user_info.preferred_artists:
+            update_data["preferences"].append(
+                {"artistId": artist_id, "interests": user_info.content_interests}
+            )
+
+        # Update user in database
+        updated_user = await db_service.update_user(user_id, update_data)
+
+        return updated_user
+    except Exception as e:
+        logger.error(f"Error updating user {user_id} with additional info: {str(e)}")
+        raise

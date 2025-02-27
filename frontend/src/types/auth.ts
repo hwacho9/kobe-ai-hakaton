@@ -24,4 +24,12 @@ export interface RegisterResponse {
     createdAt: string;
     updatedAt: string;
     preferences: string[];
+    access_token: string;
+    token_type: string;
+}
+
+export interface UserAdditionalInfo {
+    area: string;
+    content_interests: string[];
+    preferred_artists: string[];
 }

@@ -11,7 +11,10 @@ from app.services.auth import (
     register_user,
     Token,
     ACCESS_TOKEN_EXPIRE_MINUTES,
+    update_user_info,
 )
+from pydantic import BaseModel
+from typing import List, Optional
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -24,16 +27,74 @@ router = APIRouter(
 )
 
 
-@router.post("/register", response_model=User)
+# 추가 정보 업데이트를 위한 모델
+class UserAdditionalInfo(BaseModel):
+    area: str
+    content_interests: List[str]  # 앨범, 굿즈, 팬미팅, 라이브 등
+    preferred_artists: List[str]  # 아티스트 ID 목록
+
+
+@router.post("/register", response_model=dict)
 async def create_user(user_data: UserCreate):
     """Register a new user."""
     try:
         logger.info(f"회원가입 시도: {user_data.email}")
         user = await register_user(user_data)
-        logger.info(f"회원가입 성공: {user_data.email}")
-        return user
+
+        # Generate token for the newly registered user
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user["userId"]}, expires_delta=access_token_expires
+        )
+
+        logger.info(f"회원가입 성공 및 토큰 발급: {user_data.email}")
+
+        # Return user data and token
+        return {**user, "access_token": access_token, "token_type": "bearer"}
     except Exception as e:
         error_msg = f"회원가입 처리 중 오류 발생: {str(e)}"
+        logger.error(error_msg)
+        logger.error(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
+        )
+
+
+@router.post("/register/info", response_model=User)
+async def update_user_additional_info(
+    user_info: UserAdditionalInfo, current_user: dict = Depends(get_current_user)
+):
+    """Update user with additional information after registration."""
+    try:
+        logger.info(f"사용자 추가 정보 업데이트 시도: {current_user['email']}")
+
+        # Update user in database with additional info
+        from app.db.database import db_service
+
+        # Create update data
+        update_data = {
+            "area": user_info.area,
+            "content_interests": user_info.content_interests,
+            "preferences": [],
+        }
+
+        # Add artist preferences
+        for artist_id in user_info.preferred_artists:
+            update_data["preferences"].append(
+                {"artistId": artist_id, "interests": user_info.content_interests}
+            )
+
+        # Update user
+        updated_user = await db_service.update_user(current_user["userId"], update_data)
+
+        # Remove password from response
+        if "password" in updated_user:
+            del updated_user["password"]
+
+        logger.info(f"사용자 추가 정보 업데이트 성공: {current_user['email']}")
+        return updated_user
+    except Exception as e:
+        error_msg = f"사용자 추가 정보 업데이트 중 오류 발생: {str(e)}"
         logger.error(error_msg)
         logger.error(traceback.format_exc())
         raise HTTPException(
