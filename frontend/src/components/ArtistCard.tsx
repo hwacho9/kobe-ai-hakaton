@@ -1,4 +1,4 @@
-import Image from "next/image";
+import React from "react";
 
 interface ArtistCardProps {
   id: string;
@@ -16,21 +16,18 @@ export function ArtistCard({
   isSelected = false,
 }: ArtistCardProps) {
   const handleClick = () => {
-    if (onSelect) {
-      onSelect(id);
-    }
+    onSelect?.(id);
   };
 
   return (
     <div
-      className={`bg-gray-800 border border-gray-700 rounded-lg shadow-sm p-3 transition-all ${
-        isSelected ? "ring-2 ring-blue-500" : ""
-      } cursor-pointer w-32 h-32 flex items-center justify-center text-white`}
+      className={`flex-shrink-0 w-24 h-24 rounded-lg flex items-center justify-center cursor-pointer transition-colors
+        ${isSelected ? "border-2 border-pink-500" : "border border-gray-700"}
+        bg-black text-white
+      `}
       onClick={handleClick}
     >
-      <div className="text-center">
-        <h3 className="font-semibold text-base">{name}</h3>
-      </div>
+      <div className="text-center text-sm">{name}</div>
     </div>
   );
 }

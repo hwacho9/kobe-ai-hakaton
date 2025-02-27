@@ -1,0 +1,27 @@
+{
+  "artist": "BLACKPINK",
+  "past_events": [
+    {
+      "event_id": "evt001",
+      "location": "New York",
+      "date": "2024-11-20",
+      "actual_cost": {
+        "transportation": 35000,
+        "ticket": 140000,
+        "hotel": 90000
+      },
+      "total": 265000
+    },
+    {
+      "event_id": "evt002",
+      "location": "Paris",
+      "date": "2024-12-05",
+      "actual_cost": {
+        "transportation": 30000,
+        "ticket": 135000,
+        "hotel": 85000
+      },
+      "total": 250000
+    }
+  ]
+}

@@ -1,7 +1,11 @@
+import React, { useState } from "react";
 import { Bell } from "lucide-react";
-import { useState } from "react";
 
-export default function Header() {
+type HeaderProps = {
+  username: string | undefined;
+};
+
+const Header: React.FC<HeaderProps> = ({ username }) => {
   const [hasNotification, setHasNotification] = useState(true);
 
   const toggleNotification = () => {
@@ -9,20 +13,19 @@ export default function Header() {
   };
 
   return (
-    <header className="flex justify-between items-center mb-4 border-b border-gray-700">
-      <div className="text-xl">ソンファンさん</div>
-      <h1 className="text-xl font-bold flex-grow text-center">オタ活</h1>
-      <div className="relative">
+    <header className="flex items-center justify-between px-4 py-4 bg-black">
+      <div className="text-base font-semibold text-white">{username}さん</div>
+      <div className="flex items-center space-x-4">
         <Bell
           className={`h-6 w-6 cursor-pointer ${
             hasNotification ? "text-gray-300" : "text-gray-500"
           }`}
           onClick={toggleNotification}
         />
-        {hasNotification && (
-          <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>
-        )}
+        {/* 必要ならユーザーアイコンなどを追加 */}
       </div>
     </header>
   );
-}
+};
+
+export default Header;

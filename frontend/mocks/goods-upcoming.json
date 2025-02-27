@@ -1,0 +1,19 @@
+{
+  "artist": "BLACKPINK",
+  "predicted_goods": [
+    {
+      "goods_id": "g123",
+      "name": "Special Edition Album",
+      "release_date": "2025-03-10",
+      "estimated_price": 50000,
+      "details": "限定版グッズでファンダム内の関心が高い"
+    },
+    {
+      "goods_id": "g124",
+      "name": "Limited Edition Poster",
+      "release_date": "2025-03-25",
+      "estimated_price": 20000,
+      "details": "ツアー記念のポスター"
+    }
+  ]
+}

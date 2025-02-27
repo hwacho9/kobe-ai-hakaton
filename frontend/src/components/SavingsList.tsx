@@ -14,9 +14,10 @@ export default function SavingsList({ savings }: SavingsListProps) {
         {savings.map((saving) => (
           <div
             key={saving.month}
-            className="w-64 h-12 bg-gray-700 border border-gray-700 rounded-lg flex items-center justify-center mb-2 text-white"
+            className="w-64 h-12 bg-gray-700 border border-gray-700 rounded-lg flex items-center justify-between px-4 mb-2 text-white"
           >
             <span>{saving.month}</span>
+            <span>{saving.amount.toLocaleString()}円</span>
           </div>
         ))}
       </div>
