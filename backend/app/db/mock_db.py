@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 import copy
+import uuid
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,11 +25,73 @@ mock_data = {
     "artists": {},
     "fan_preferences": [],
     "event_cache": {},
+    "event_cost_calculations": [],  # 이벤트 비용 계산 결과를 저장하기 위한 컬렉션
 }
+
+
+class MockCollection:
+    """Mock collection class to simulate Cosmos DB container operations."""
+
+    def __init__(self, collection_name):
+        self.collection_name = collection_name
+
+    def create_item(self, body):
+        """Create a new item in the collection."""
+        logger.info(f"Creating item in mock collection: {self.collection_name}")
+
+        # 컬렉션 타입에 따라 처리
+        if isinstance(mock_data[self.collection_name], list):
+            # ID가 없으면 생성
+            if "id" not in body:
+                body["id"] = str(uuid.uuid4())
+            mock_data[self.collection_name].append(copy.deepcopy(body))
+        elif isinstance(mock_data[self.collection_name], dict):
+            # 딕셔너리 타입 컬렉션인 경우
+            item_id = body.get("id")
+            if not item_id:
+                item_id = str(uuid.uuid4())
+                body["id"] = item_id
+            mock_data[self.collection_name][item_id] = copy.deepcopy(body)
+
+        return copy.deepcopy(body)
+
+    def query_items(self, query, enable_cross_partition_query=True):
+        """Query items from the collection."""
+        logger.info(
+            f"Querying items in mock collection: {self.collection_name} with query: {query}"
+        )
+
+        # 매우 단순화된 쿼리 처리 (실제 SQL 쿼리 처리는 복잡하지만 여기서는 간단하게 구현)
+        # 실제 애플리케이션에서는 더 복잡한 쿼리 파싱이 필요할 수 있음
+
+        # 컬렉션의 모든 아이템 반환
+        if isinstance(mock_data[self.collection_name], list):
+            # 리스트 타입 컬렉션인 경우
+            items = mock_data[self.collection_name]
+        elif isinstance(mock_data[self.collection_name], dict):
+            # 딕셔너리 타입 컬렉션인 경우
+            items = list(mock_data[self.collection_name].values())
+        else:
+            items = []
+
+        # 딥 카피하여 원본 데이터 변경 방지
+        return copy.deepcopy(items)
 
 
 class MockDB:
     """Mock database for development and testing when Cosmos DB is not available."""
+
+    # Collection operations
+    async def get_collection(self, collection_name):
+        """Get a collection by name from the mock database."""
+        logger.info(f"Getting mock collection: {collection_name}")
+        # 컬렉션이 존재하지 않는 경우 빈 컬렉션 생성
+        if collection_name not in mock_data:
+            mock_data[collection_name] = []
+            logger.info(f"Created new mock collection: {collection_name}")
+
+        # 컬렉션 프록시 객체 반환
+        return MockCollection(collection_name)
 
     # User operations
     async def create_user(self, user_data):

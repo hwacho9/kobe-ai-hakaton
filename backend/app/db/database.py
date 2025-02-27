@@ -78,6 +78,14 @@ class DatabaseService:
         """Create or update cached event data."""
         return await self.db.create_or_update_event_cache(event_data)
 
+    async def get_collection(self, collection_name):
+        """Get a specific collection from the database."""
+        if hasattr(self.db, "get_collection"):
+            return await self.db.get_collection(collection_name)
+        else:
+            logger.warning(f"Get collection not implemented for this database backend")
+            return None
+
 
 # Create a singleton instance
 db_service = DatabaseService()
@@ -90,6 +98,15 @@ def get_database():
     This function is used by routers to get access to the database.
     """
     return db_service.db
+
+
+# Function to get a specific collection
+def get_collection(collection_name):
+    """
+    Returns a specific collection from the database.
+    This function is used to access collections directly.
+    """
+    return db_service.get_collection(collection_name)
 
 
 # Initialize the database on startup

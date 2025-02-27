@@ -101,6 +101,14 @@ class CosmosDB:
 
         return self.containers.get(container_id)
 
+    async def get_collection(self, collection_name):
+        """
+        Get a collection by name (alias for get_container).
+        This method is added for compatibility with the database.py interface.
+        """
+        logger.info(f"Getting collection '{collection_name}'")
+        return self.get_container(collection_name)
+
     # User operations
     async def create_user(self, user_data):
         """Create a new user."""

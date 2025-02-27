@@ -99,3 +99,94 @@ export async function getUpcomingEvents(): Promise<any> {
         throw error;
     }
 }
+
+/**
+ * 여러 이벤트의 비용을 계산하는 함수
+ * @param params 아티스트 이름과 이벤트 목록
+ * @returns 계산된 비용 정보
+ */
+export async function getMultipleEventsCost(params: {
+    artist: string;
+    events: any[];
+}): Promise<any> {
+    try {
+        // 실제 API 호출
+        const token = localStorage.getItem("auth-storage")
+            ? JSON.parse(localStorage.getItem("auth-storage") || "{}").state
+                  ?.token
+            : null;
+
+        if (!token) {
+            throw new Error("認証トークンがありません");
+        }
+
+        console.log("Making request to backend API with params:", params);
+
+        const response = await fetch(`${API_URL}/api/events/multiple-costs`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(params),
+        });
+
+        console.log("Backend API response status:", response.status);
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Backend API error response:", data);
+            throw new Error(data.detail || "費用計算に失敗しました");
+        }
+
+        return data;
+    } catch (error: any) {
+        console.error("複数イベント費用計算エラー:", error);
+        throw error;
+    }
+}
+
+/**
+ * 계산된 비용 데이터를 저장하는 함수
+ * @param costData 저장할 비용 데이터
+ * @returns 저장 결과
+ */
+export async function saveCostData(costData: any): Promise<any> {
+    try {
+        // 실제 API 호출
+        const token = localStorage.getItem("auth-storage")
+            ? JSON.parse(localStorage.getItem("auth-storage") || "{}").state
+                  ?.token
+            : null;
+
+        if (!token) {
+            throw new Error("認証トークンがありません");
+        }
+
+        console.log("Saving cost data to backend:", costData);
+
+        const response = await fetch(`${API_URL}/api/events/save-cost`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(costData),
+        });
+
+        console.log("Save cost data response status:", response.status);
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Save cost data error response:", data);
+            throw new Error(data.detail || "費用データの保存に失敗しました");
+        }
+
+        return data;
+    } catch (error: any) {
+        console.error("費用データ保存エラー:", error);
+        throw error;
+    }
+}

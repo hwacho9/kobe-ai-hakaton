@@ -34,7 +34,11 @@ export default function EventsPrediction() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [eventsData, setEventsData] = useState<any>(null);
+    const [predictedEvents, setPredictedEvents] = useState<any[]>([]);
+    const [userArea, setUserArea] = useState<string>("");
+    const [selectedEvents, setSelectedEvents] = useState<
+        Map<string, Set<number>>
+    >(new Map());
 
     useEffect(() => {
         // Redirect to login if not authenticated
@@ -50,9 +54,12 @@ export default function EventsPrediction() {
                 setError(null);
 
                 const data = await getUpcomingEvents();
-                setEventsData(data);
+                console.log("Fetched events data:", data);
+
+                setPredictedEvents(data.predictions || []);
+                setUserArea(data.user_area || "東京");
             } catch (err: any) {
-                console.error("イベント情報取得エラー:", err);
+                console.error("Events fetch error:", err);
                 setError(err.message || "イベント情報の取得に失敗しました");
             } finally {
                 setIsLoading(false);
@@ -62,22 +69,90 @@ export default function EventsPrediction() {
         fetchEvents();
     }, [isAuthenticated, router]);
 
-    // Helper function to format date for display
-    const formatDate = (dateStr: string) => {
-        if (!dateStr) return "";
+    // Event selection handling
+    const toggleEventSelection = (artistIndex: number, eventIndex: number) => {
+        setSelectedEvents((prevSelected) => {
+            const newSelected = new Map(prevSelected);
+            const artistKey = artistIndex.toString();
 
-        const [year, month] = dateStr.split("-");
-        const date = new Date(parseInt(year), parseInt(month) - 1);
+            if (!newSelected.has(artistKey)) {
+                newSelected.set(artistKey, new Set([eventIndex]));
+            } else {
+                const artistEvents = new Set(newSelected.get(artistKey));
+                if (artistEvents.has(eventIndex)) {
+                    artistEvents.delete(eventIndex);
+                } else {
+                    artistEvents.add(eventIndex);
+                }
 
-        return new Intl.DateTimeFormat("ja-JP", {
-            year: "numeric",
-            month: "long",
-        }).format(date);
+                if (artistEvents.size === 0) {
+                    newSelected.delete(artistKey);
+                } else {
+                    newSelected.set(artistKey, artistEvents);
+                }
+            }
+
+            return newSelected;
+        });
     };
 
-    // Helper function to get event type display name
-    const getEventTypeName = (type: string) => {
-        return EVENT_TYPE_MAP[type] || type;
+    // Check if an event is selected
+    const isEventSelected = (
+        artistIndex: number,
+        eventIndex: number
+    ): boolean => {
+        const artistKey = artistIndex.toString();
+        return (
+            selectedEvents.has(artistKey) &&
+            selectedEvents.get(artistKey)!.has(eventIndex)
+        );
+    };
+
+    // Count selected events
+    const countSelectedEvents = (): number => {
+        let count = 0;
+        selectedEvents.forEach((events) => {
+            count += events.size;
+        });
+        return count;
+    };
+
+    // Handle costs calculation
+    const handleCalculateCosts = () => {
+        // Alert if no events are selected
+        if (countSelectedEvents() === 0) {
+            alert("イベントを選択してください");
+            return;
+        }
+
+        // Configure selected event data
+        const selectedEventData: { artist: string; events: any[] }[] = [];
+
+        selectedEvents.forEach((eventIndices, artistIndex) => {
+            const artist = predictedEvents[parseInt(artistIndex)];
+            const selectedEventsForArtist = Array.from(eventIndices).map(
+                (eventIndex) => {
+                    return artist.predicted_events[eventIndex];
+                }
+            );
+
+            selectedEventData.push({
+                artist: artist.artist,
+                events: selectedEventsForArtist,
+            });
+        });
+
+        // Save selected event data to session storage
+        sessionStorage.setItem(
+            "costCalculationData",
+            JSON.stringify({
+                artist: selectedEventData[0].artist, // Use first artist only
+                events: selectedEventData[0].events,
+            })
+        );
+
+        // Redirect to costs calculation page
+        router.push("/cost-calculation");
     };
 
     if (isLoading) {
@@ -85,9 +160,7 @@ export default function EventsPrediction() {
             <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[60vh]">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-lg font-medium">
-                        イベント予測データを読み込み中...
-                    </p>
+                    <p className="text-lg font-medium">イベントを予測中...</p>
                 </div>
             </div>
         );
@@ -100,7 +173,11 @@ export default function EventsPrediction() {
                     <p className="font-bold">エラーが発生しました</p>
                     <p>{error}</p>
                 </div>
-                <Button onClick={() => router.push("/")}>ホームに戻る</Button>
+                <div className="flex justify-center">
+                    <Button onClick={() => router.push("/")}>
+                        ホームに戻る
+                    </Button>
+                </div>
             </div>
         );
     }
@@ -108,100 +185,110 @@ export default function EventsPrediction() {
     return (
         <div className="container mx-auto px-4 py-8">
             <h1 className="text-2xl font-bold mb-6 text-center">
-                イベント予測
+                予測されたイベント
             </h1>
 
-            <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                <p className="text-lg">
-                    <span className="font-semibold">あなたの活動地域:</span>{" "}
-                    {eventsData?.user_area || "未設定"}
+            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                <p className="text-blue-800">
+                    <span className="font-semibold">地域:</span> {userArea}
                 </p>
-                {eventsData?.user_content_interests?.length > 0 && (
-                    <p className="text-lg mt-2">
-                        <span className="font-semibold">
-                            興味のあるコンテンツ:
-                        </span>{" "}
-                        {eventsData.user_content_interests.join(", ")}
-                    </p>
-                )}
-                <p className="text-sm text-gray-600 mt-2">
-                    ※
-                    これらの予測は現在から2年以内のイベントに基づいています。実際のイベントとは異なる場合があります。
+                <p className="text-blue-800 mt-2">
+                    経費計算のために参加したいイベントを選択してください。
                 </p>
             </div>
 
-            {eventsData?.predictions?.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    {eventsData.predictions.map(
-                        (prediction: any, index: number) => (
-                            <div
-                                key={index}
-                                className="bg-white shadow-md rounded-lg overflow-hidden">
-                                <div className="p-4 bg-purple-100 border-b border-purple-200">
-                                    <h2 className="text-xl font-bold text-purple-800">
-                                        {prediction.artist}
-                                    </h2>
-                                    <p className="text-sm text-purple-600 mt-1">
-                                        予測イベント数:{" "}
-                                        {prediction.predicted_events?.length ||
-                                            0}
-                                    </p>
-                                </div>
-
-                                <div className="p-4">
-                                    {prediction.predicted_events &&
-                                    prediction.predicted_events.length > 0 ? (
-                                        <div className="space-y-4">
-                                            {prediction.predicted_events.map(
-                                                (
-                                                    event: any,
-                                                    eventIndex: number
-                                                ) => (
-                                                    <div
-                                                        key={eventIndex}
-                                                        className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <span className="font-medium text-lg">
-                                                                {getEventTypeName(
-                                                                    event.event_type
-                                                                )}
-                                                            </span>
-                                                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm">
-                                                                {formatDate(
-                                                                    event.date
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-gray-600">
-                                                            <span className="font-medium">
-                                                                場所:
-                                                            </span>{" "}
-                                                            {event.location}
-                                                        </p>
-                                                    </div>
-                                                )
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <p className="text-gray-500 text-center py-4">
-                                            予測イベントがありません
-                                        </p>
-                                    )}
-                                </div>
+            {predictedEvents.length > 0 ? (
+                <div className="space-y-8 mb-8">
+                    {predictedEvents.map((artist, artistIndex) => (
+                        <div
+                            key={artist.artist}
+                            className="bg-white shadow-md rounded-lg overflow-hidden">
+                            <div className="bg-indigo-600 text-white p-4">
+                                <h2 className="text-xl font-bold">
+                                    {artist.artist}
+                                </h2>
                             </div>
-                        )
-                    )}
+
+                            <div className="p-4">
+                                <h3 className="font-semibold text-lg mb-3">
+                                    予測されたイベント
+                                </h3>
+
+                                {artist.predicted_events &&
+                                artist.predicted_events.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {artist.predicted_events.map(
+                                            (
+                                                event: any,
+                                                eventIndex: number
+                                            ) => (
+                                                <div
+                                                    key={`${artist.artist}-${eventIndex}`}
+                                                    className={`p-3 border rounded-md cursor-pointer transition duration-150 ${
+                                                        isEventSelected(
+                                                            artistIndex,
+                                                            eventIndex
+                                                        )
+                                                            ? "bg-indigo-100 border-indigo-300"
+                                                            : "hover:bg-gray-50"
+                                                    }`}
+                                                    onClick={() =>
+                                                        toggleEventSelection(
+                                                            artistIndex,
+                                                            eventIndex
+                                                        )
+                                                    }>
+                                                    <div className="flex justify-between items-center">
+                                                        <div>
+                                                            <p className="font-medium">
+                                                                {
+                                                                    event.event_type
+                                                                }
+                                                            </p>
+                                                            <p className="text-sm text-gray-600">
+                                                                {event.location}
+                                                            </p>
+                                                            <p className="text-sm text-gray-600">
+                                                                {event.date}
+                                                            </p>
+                                                        </div>
+                                                        <div className="w-6 h-6 rounded-full border border-indigo-500 flex items-center justify-center">
+                                                            {isEventSelected(
+                                                                artistIndex,
+                                                                eventIndex
+                                                            ) && (
+                                                                <div className="w-4 h-4 rounded-full bg-indigo-500"></div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-500">
+                                        イベントが予測されていません
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : (
                 <div className="bg-white shadow-md rounded-lg p-8 text-center mb-8">
                     <p className="text-gray-500">
-                        イベント予測データがありません
+                        予測されたイベントがありません
                     </p>
                 </div>
             )}
 
-            <div className="flex justify-center">
-                <Button onClick={() => router.push("/")}>ホームに戻る</Button>
+            <div className="fixed bottom-6 right-6">
+                <Button
+                    onClick={handleCalculateCosts}
+                    disabled={countSelectedEvents() === 0}
+                    className="shadow-lg">
+                    選択したイベントの費用を計算する ({countSelectedEvents()})
+                </Button>
             </div>
         </div>
     );
