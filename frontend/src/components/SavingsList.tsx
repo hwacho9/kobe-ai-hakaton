@@ -1,4 +1,3 @@
-import React from "react";
 import { MonthlySaving } from "../types";
 
 type SavingsListProps = {
@@ -8,16 +7,19 @@ type SavingsListProps = {
 export default function SavingsList({ savings }: SavingsListProps) {
   return (
     <section className="mb-8">
-      <div className="bg-white text-black rounded-lg p-4">
-        <h2 className="text-lg font-semibold mb-3">先月までの貯金</h2>
-        <div className="space-y-2 text-sm">
-          {savings.map((saving) => (
-            <div key={saving.month} className="flex justify-between">
-              <span>{saving.month}</span>
-              <span>{saving.amount.toLocaleString()}円</span>
-            </div>
-          ))}
-        </div>
+      <h2 className="text-lg font-semibold mb-2 text-gray-300">
+        前月までの貯金額
+      </h2>
+      <div className="flex flex-col items-center">
+        {savings.map((saving) => (
+          <div
+            key={saving.month}
+            className="w-64 h-12 bg-gray-700 border border-gray-700 rounded-lg flex items-center justify-between px-4 mb-2 text-white"
+          >
+            <span>{saving.month}</span>
+            <span>{saving.amount.toLocaleString()}円</span>
+          </div>
+        ))}
       </div>
     </section>
   );
