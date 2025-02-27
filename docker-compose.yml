@@ -20,6 +20,8 @@ services:
             - AZURE_COSMOS_DB_KEY=${AZURE_COSMOS_DB_KEY:-}
             - AZURE_COSMOS_DB_DATABASE=${AZURE_COSMOS_DB_DATABASE:-fan_events}
         restart: unless-stopped
+        networks:
+            - app-network
 
     frontend:
         build:
@@ -37,3 +39,9 @@ services:
         depends_on:
             - backend
         restart: unless-stopped
+        networks:
+            - app-network
+
+networks:
+    app-network:
+        driver: bridge

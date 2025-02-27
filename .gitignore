@@ -49,3 +49,15 @@ jspm_packages
 .env.development.local
 .env.test.local
 .env.production.local
+
+
+.pyc
+.pyo
+.pyd
+.pyw
+.pyz
+.pywz
+.pywz
+
+__pycache__/
+*.pyc
