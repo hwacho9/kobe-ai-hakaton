@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -8,6 +9,10 @@ from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from app.db.database import db_service
 from app.models.user import User, UserCreate
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Configure JWT
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
@@ -32,26 +37,63 @@ class TokenData(BaseModel):
 
 def verify_password(plain_password, hashed_password):
     """Verify a password against a hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    logger.debug(f"비밀번호 검증 시도")
+    if not hashed_password:
+        logger.warning("저장된 비밀번호가 없습니다")
+        return False
+
+    try:
+        result = pwd_context.verify(plain_password, hashed_password)
+        logger.debug(f"비밀번호 검증 결과: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"비밀번호 검증 중 오류 발생: {str(e)}")
+        return False
 
 
 def get_password_hash(password):
     """Hash a password."""
-    return pwd_context.hash(password)
+    logger.debug("비밀번호 해싱 시도")
+    try:
+        hashed = pwd_context.hash(password)
+        logger.debug("비밀번호 해싱 성공")
+        return hashed
+    except Exception as e:
+        logger.error(f"비밀번호 해싱 중 오류 발생: {str(e)}")
+        raise
 
 
 async def authenticate_user(email: str, password: str):
     """Authenticate a user by email and password."""
-    # In a real application, you would query the database by email
-    # For now, we'll just iterate through all users
-    users = await db_service.get_all_users()
-    user = next((u for u in users if u.get("email") == email), None)
+    logger.info(f"사용자 인증 시도: {email}")
+    try:
+        # In a real application, you would query the database by email
+        # For now, we'll just iterate through all users
+        users = await db_service.get_all_users()
+        logger.debug(f"전체 사용자 수: {len(users)}")
 
-    if not user:
-        return False
-    if not verify_password(password, user.get("password")):
-        return False
-    return user
+        user = next((u for u in users if u.get("email") == email), None)
+
+        if not user:
+            logger.warning(f"사용자를 찾을 수 없음: {email}")
+            return False
+
+        logger.info(f"사용자 찾음: {email}, 비밀번호 검증 시도")
+
+        # 비밀번호 필드 확인
+        if "password" not in user:
+            logger.error(f"사용자 {email}의 비밀번호 필드가 없습니다")
+            return False
+
+        if not verify_password(password, user.get("password")):
+            logger.warning(f"비밀번호 불일치: {email}")
+            return False
+
+        logger.info(f"인증 성공: {email}")
+        return user
+    except Exception as e:
+        logger.error(f"인증 과정 중 오류 발생: {str(e)}")
+        raise
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -110,3 +152,33 @@ async def register_user(user_data: UserCreate):
         del created_user["password"]
 
     return created_user
+
+
+async def update_user_info(user_id: str, user_info):
+    """Update user with additional information after registration."""
+    try:
+        # Get current user
+        user = await db_service.get_user(user_id)
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+
+        # Prepare update data
+        update_data = {
+            "area": user_info.area,
+            "content_interests": user_info.content_interests,
+            "preferences": [],
+        }
+
+        # Add artist preferences
+        for artist_id in user_info.preferred_artists:
+            update_data["preferences"].append(
+                {"artistId": artist_id, "interests": user_info.content_interests}
+            )
+
+        # Update user in database
+        updated_user = await db_service.update_user(user_id, update_data)
+
+        return updated_user
+    except Exception as e:
+        logger.error(f"Error updating user {user_id} with additional info: {str(e)}")
+        raise

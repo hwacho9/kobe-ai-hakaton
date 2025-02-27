@@ -2,6 +2,8 @@ import os
 from azure.cosmos import CosmosClient, PartitionKey, exceptions
 from dotenv import load_dotenv
 import logging
+import json
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -16,10 +18,10 @@ COSMOS_KEY = os.getenv("AZURE_COSMOS_DB_KEY")
 DATABASE_NAME = os.getenv("AZURE_COSMOS_DB_DATABASE", "fan_events")
 
 # Container names
-USERS_CONTAINER = "items"
-ARTISTS_CONTAINER = "items"
-FAN_PREFERENCES_CONTAINER = "items"
-EVENT_CACHE_CONTAINER = "items"
+USERS_CONTAINER = "users"
+ARTISTS_CONTAINER = "artists"
+FAN_PREFERENCES_CONTAINER = "fan_preferences"
+EVENT_CACHE_CONTAINER = "event_cache"
 
 
 class CosmosDB:
@@ -44,8 +46,11 @@ class CosmosDB:
             self.database = self.client.create_database_if_not_exists(id=DATABASE_NAME)
             logger.info(f"Database '{DATABASE_NAME}' initialized")
 
-            # Create container if it doesn't exist
+            # Create all required containers
             self._create_container_if_not_exists(USERS_CONTAINER, "/id")
+            self._create_container_if_not_exists(ARTISTS_CONTAINER, "/id")
+            self._create_container_if_not_exists(FAN_PREFERENCES_CONTAINER, "/id")
+            self._create_container_if_not_exists(EVENT_CACHE_CONTAINER, "/id")
 
             self.initialized = True
             logger.info("Cosmos DB initialization completed successfully")
@@ -61,7 +66,7 @@ class CosmosDB:
             container_params = {
                 "id": container_id,
                 "partition_key": PartitionKey(path=partition_key_path),
-                "offer_throughput": 400,  # 명시적으로 낮은 처리량 지정
+                "offer_throughput": 100,  # 낮은 처리량으로 설정
             }
 
             if default_ttl is not None:
@@ -70,9 +75,20 @@ class CosmosDB:
             container = self.database.create_container_if_not_exists(**container_params)
             self.containers[container_id] = container
             logger.info(f"Container '{container_id}' created or already exists")
+            return container
         except exceptions.CosmosHttpResponseError as e:
             logger.error(f"Failed to create container '{container_id}': {str(e)}")
-            raise
+            # 이미 존재하는 컨테이너인 경우 가져오기 시도
+            try:
+                container = self.database.get_container_client(container_id)
+                self.containers[container_id] = container
+                logger.info(f"Retrieved existing container '{container_id}'")
+                return container
+            except Exception as inner_e:
+                logger.error(
+                    f"Failed to retrieve container '{container_id}': {str(inner_e)}"
+                )
+                return None
 
     def get_container(self, container_id):
         """Get a container by ID. Create it if it doesn't exist."""
@@ -82,7 +98,7 @@ class CosmosDB:
 
         if container_id not in self.containers:
             logger.info(f"Container '{container_id}' not in cache, creating it...")
-            self._create_container_if_not_exists(container_id, "/id")
+            return self._create_container_if_not_exists(container_id, "/id")
 
         return self.containers.get(container_id)
 
@@ -105,6 +121,12 @@ class CosmosDB:
             user_data["id"] = user_data.get(
                 "userId", str(hash(user_data.get("email", "")))
             )
+
+        # datetime 객체를 문자열로 변환
+        if "createdAt" in user_data and isinstance(user_data["createdAt"], datetime):
+            user_data["createdAt"] = user_data["createdAt"].isoformat()
+        if "updatedAt" in user_data and isinstance(user_data["updatedAt"], datetime):
+            user_data["updatedAt"] = user_data["updatedAt"].isoformat()
 
         return container.create_item(body=user_data)
 
