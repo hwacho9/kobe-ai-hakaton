@@ -1038,6 +1038,8 @@ async def get_user_event_costs(current_user: dict = Depends(get_current_user)):
             collection.query_items(query=query, enable_cross_partition_query=True)
         )
 
+        print(f"cost_items: {cost_items}")
+
         # 총 예상 비용 합계 계산
         total_estimated = sum(
             item.get("total_estimated", 0)
@@ -1045,9 +1047,22 @@ async def get_user_event_costs(current_user: dict = Depends(get_current_user)):
             if "total_estimated" in item
         )
 
+        # 사용자의 현재 저금액 가져오기
+        users_collection = await get_collection("users")
+        if users_collection:
+            query = f"SELECT c.current_savings FROM c WHERE c.userId = '{user_id}'"
+            user_items = list(
+                users_collection.query_items(
+                    query=query, enable_cross_partition_query=True
+                )
+            )
+            if user_items and len(user_items) > 0:
+                current_savings = user_items[0].get("current_savings", 0)
+
         return {
             "costs": cost_items,
             "total_estimated": total_estimated,
+            "total_savings": current_savings,
             "count": len(cost_items),
         }
 
@@ -1058,4 +1073,165 @@ async def get_user_event_costs(current_user: dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=500,
             detail=f"費用データの取得中にエラーが発生しました: {str(e)}",
+        )
+
+
+# 사용자 저금액 추가 API
+@app.post("/api/savings/add")
+async def add_user_savings(
+    savings_data: Dict[str, Any] = Body(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    사용자의 저금액을 추가하고 이력을 저장합니다.
+    """
+    try:
+        # 사용자 ID 가져오기
+        user_id = current_user.get("userId")
+
+        # 저금액 가져오기
+        amount = savings_data.get("amount", 0)
+
+        # 숫자 타입으로 변환
+        try:
+            amount = int(float(amount))
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="金額は数値で入力してください")
+
+        if amount <= 0:
+            raise HTTPException(
+                status_code=400, detail="金額は1円以上で入力してください"
+            )
+
+        # 메모 가져오기 (옵션)
+        memo = savings_data.get("memo", "")
+
+        # 현재 날짜
+        saved_at = datetime.datetime.now().isoformat()
+
+        # 저금 이력 데이터 구성
+        savings_history_item = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "amount": amount,
+            "memo": memo,
+            "saved_at": saved_at,
+        }
+
+        # 저금 이력 저장
+        savings_collection = await get_collection("savings_history")
+        if savings_collection:
+            savings_collection.create_item(savings_history_item)
+            print(f"Savings history saved: {amount} yen for user {user_id}")
+        else:
+            print("No savings_history collection available")
+
+        # 사용자 정보 업데이트 (current_savings 증가)
+        users_collection = await get_collection("users")
+        if users_collection:
+            # 사용자 문서 쿼리
+            query = f"SELECT * FROM c WHERE c.userId = '{user_id}'"
+            user_items = list(
+                users_collection.query_items(
+                    query=query, enable_cross_partition_query=True
+                )
+            )
+
+            if user_items:
+                user_doc = user_items[0]
+
+                # 현재 저금액 가져오기
+                current_savings = user_doc.get("current_savings", 0)
+
+                # 저금액 추가
+                new_savings = current_savings + amount
+
+                # 사용자 문서 업데이트
+                user_doc["current_savings"] = new_savings
+
+                # 사용자 문서 업데이트
+                users_collection.replace_item(user_doc["id"], user_doc)
+                print(f"Updated user {user_id} savings to {new_savings}")
+
+                return {
+                    "message": "貯金が正常に追加されました",
+                    "current_savings": new_savings,
+                    "added_amount": amount,
+                }
+            else:
+                raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
+        else:
+            raise HTTPException(
+                status_code=500, detail="ユーザーコレクションにアクセスできません"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"貯金データの保存中にエラーが発生しました: {str(e)}",
+        )
+
+
+# 사용자 저금 이력 가져오기 API
+@app.get("/api/savings/history")
+async def get_savings_history(current_user: dict = Depends(get_current_user)):
+    """
+    사용자의 저금 이력을 가져옵니다.
+    """
+    try:
+        # 사용자 ID 가져오기
+        user_id = current_user.get("userId")
+
+        # DB에서 사용자 저금 이력 가져오기
+        collection = await get_collection("savings_history")
+        if not collection:
+            return {"message": "データを取得できません", "history": [], "total": 0}
+
+        # 사용자 ID로 저금 이력 쿼리 (최신 순으로 정렬)
+        query = (
+            f"SELECT * FROM c WHERE c.user_id = '{user_id}' ORDER BY c.saved_at DESC"
+        )
+        history_items = list(
+            collection.query_items(query=query, enable_cross_partition_query=True)
+        )
+
+        # 총 저금액 계산
+        total_savings = sum(
+            item.get("amount", 0) for item in history_items if "amount" in item
+        )
+
+        # 현재 저금액 확인 (사용자 문서에서)
+        users_collection = await get_collection("users")
+        current_savings = 0
+
+        if users_collection:
+            query = f"SELECT c.current_savings FROM c WHERE c.userId = '{user_id}'"
+            user_items = list(
+                users_collection.query_items(
+                    query=query, enable_cross_partition_query=True
+                )
+            )
+
+            if user_items and "current_savings" in user_items[0]:
+                current_savings = user_items[0]["current_savings"]
+
+        return {
+            "history": history_items,
+            "total": total_savings,
+            "current_savings": current_savings,
+            "count": len(history_items),
+        }
+
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"貯金履歴の取得中にエラーが発生しました: {str(e)}",
         )

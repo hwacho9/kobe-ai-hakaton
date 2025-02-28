@@ -1,7 +1,7 @@
 import { User } from "@/types/auth";
 
 // 환경 변수에서 API URL과 모크 API 사용 여부 가져오기
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const USE_MOCK_API = process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
 
 // 모의 데이터
@@ -81,6 +81,27 @@ export interface UserCostsResponse {
     count: number;
 }
 
+// 저금 내역 타입 정의
+export interface SavingsHistory {
+    id: string;
+    amount: number;
+    memo?: string;
+    saved_at: string;
+}
+
+export interface SavingsHistoryResponse {
+    history: SavingsHistory[];
+    total: number;
+    current_savings: number;
+    count: number;
+}
+
+export interface AddSavingsResponse {
+    message: string;
+    current_savings: number;
+    added_amount: number;
+}
+
 /**
  * 사용자의 선호도에 기반한 예정된 이벤트를 가져오는 함수
  * @returns 예정된 이벤트 정보
@@ -109,7 +130,7 @@ export async function getUpcomingEvents(): Promise<any> {
 
         console.log("Frontend: Making request to Next.js API route with token");
 
-        const response = await fetch(`${API_URL}/api/events/upcoming`, {
+        const response = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
             method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -162,14 +183,17 @@ export async function getMultipleEventsCost(params: {
 
         console.log("Making request to backend API with params:", params);
 
-        const response = await fetch(`${API_URL}/api/events/multiple-costs`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(params),
-        });
+        const response = await fetch(
+            `${API_BASE_URL}/api/events/multiple-costs`,
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(params),
+            }
+        );
 
         console.log("Backend API response status:", response.status);
 
@@ -206,7 +230,7 @@ export async function saveCostData(costData: any): Promise<any> {
 
         console.log("Saving cost data to backend:", costData);
 
-        const response = await fetch(`${API_URL}/api/events/save-cost`, {
+        const response = await fetch(`${API_BASE_URL}/api/events/save-cost`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -249,7 +273,7 @@ export async function getUserEventCosts(): Promise<UserCostsResponse> {
 
         console.log("Fetching user cost data from backend");
 
-        const response = await fetch(`${API_URL}/api/events/user-costs`, {
+        const response = await fetch(`${API_BASE_URL}/api/events/user-costs`, {
             method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -269,6 +293,96 @@ export async function getUserEventCosts(): Promise<UserCostsResponse> {
         return data;
     } catch (error: any) {
         console.error("費用データ取得エラー:", error);
+        throw error;
+    }
+}
+
+/**
+ * 저금 내역을 가져오는 API 호출
+ * @returns 저금 내역 목록과 총 저금액
+ */
+export async function getSavingsHistory(): Promise<{
+    history: SavingsHistory[];
+    total: number;
+}> {
+    try {
+        const token = localStorage.getItem("auth-storage")
+            ? JSON.parse(localStorage.getItem("auth-storage") || "{}").state
+                  ?.token
+            : null;
+
+        if (!token) {
+            throw new Error("認証トークンがありません");
+        }
+
+        console.log("Fetching savings history from backend");
+
+        const response = await fetch(`${API_BASE_URL}/api/savings/history`, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "貯金履歴の取得に失敗しました");
+        }
+
+        const data = await response.json();
+        console.log("Savings history data:", data);
+        return data;
+    } catch (error: any) {
+        console.error("Failed to fetch savings history:", error);
+        throw error;
+    }
+}
+
+/**
+ * 새 저금액을 추가하는 API 호출
+ * @param amount 저금액
+ * @param memo 메모 (선택사항)
+ * @returns 추가된 저금 정보
+ */
+export async function addSavings(
+    amount: number,
+    memo?: string
+): Promise<{ success: boolean; message: string }> {
+    try {
+        const token = localStorage.getItem("auth-storage")
+            ? JSON.parse(localStorage.getItem("auth-storage") || "{}").state
+                  ?.token
+            : null;
+
+        if (!token) {
+            throw new Error("認証トークンがありません");
+        }
+
+        console.log(`Adding savings: ${amount}円, memo: ${memo}`);
+
+        const response = await fetch(`${API_BASE_URL}/api/savings/add`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                amount,
+                memo: memo || "",
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "貯金の追加に失敗しました");
+        }
+
+        const data = await response.json();
+        console.log("Savings added:", data);
+        return data;
+    } catch (error: any) {
+        console.error("Failed to add savings:", error);
         throw error;
     }
 }
