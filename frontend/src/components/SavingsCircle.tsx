@@ -166,7 +166,7 @@ export default function SavingsCircle({
                 </svg>
                 <div className="text-center absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white">
                     <p className="text-lg font-bold">
-                        残り{totalSavings.toLocaleString()}円
+                        残り{totalSavings?.toLocaleString()}円
                     </p>
                     {furthestEventDays > 0 && (
                         <p className="text-sm">あと{furthestEventDays}日</p>
