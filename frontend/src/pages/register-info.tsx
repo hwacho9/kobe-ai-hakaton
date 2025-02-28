@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 // 지역 및 관심사 옵션
 const AREAS = ["東京", "大阪", "名古屋", "九州", "北海道", "其他"];
 
-const INTERESTS = ["アルバム", "グッズ", "ファンミーティング", "コンサート"];
+const INTERESTS = ["アルバム", "グッズ", "ファンミーティング", "ライブ"];
 
 export default function RegisterInfoPage() {
     const router = useRouter();

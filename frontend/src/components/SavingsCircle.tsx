@@ -87,7 +87,7 @@ export default function SavingsCircle({
                         fill="white"
                         fontSize="8"
                         textAnchor="middle">
-                        目標: {savingsGoal.toLocaleString()}円
+                        目標: {savingsGoal?.toLocaleString()}円
                     </text>
 
                     {/* 背景の円（未達成部分：グレー） */}

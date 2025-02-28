@@ -324,15 +324,6 @@ export default function DetailPage() {
                         </div>
                     </>
                 )}
-
-                <div className="flex justify-center space-x-4">
-                    <Button onClick={() => router.push("/events-prediction")}>
-                        新しいイベント予測
-                    </Button>
-                    <Button onClick={() => router.push("/")} variant="outline">
-                        ホームに戻る
-                    </Button>
-                </div>
             </div>
 
             <Footer />
