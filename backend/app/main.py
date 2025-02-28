@@ -33,6 +33,7 @@ app.add_middleware(
         "http://localhost:3000",  # 로컬 개발 환경
         "http://frontend:3000",  # Docker 컨테이너 내부 접근
         "*",  # 모든 오리진 허용 (개발 중에만 사용)
+        "104.215.58.230",
     ],
     allow_credentials=True,
     allow_methods=["*"],
