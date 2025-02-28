@@ -62,7 +62,7 @@ export default function DetailPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-black">
+            <div className="min-h-screen bg-[#242424]">
                 <Header username={user?.username} />
                 <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[60vh] text-white">
                     <div className="text-center">
@@ -79,7 +79,7 @@ export default function DetailPage() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-black">
+            <div className="min-h-screen bg-[#242424]">
                 <Header username={user?.username} />
                 <div className="container mx-auto px-4 py-8 text-white">
                     <div className="bg-red-900 border border-red-600 text-white px-4 py-3 rounded mb-4">
@@ -101,7 +101,7 @@ export default function DetailPage() {
     const hasCostsData = costsData?.costs && costsData.costs.length > 0;
 
     return (
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-[#242424] text-white">
             <Header username={user?.username} />
 
             <div className="container mx-auto px-4 py-8">
@@ -324,15 +324,6 @@ export default function DetailPage() {
                         </div>
                     </>
                 )}
-
-                <div className="flex justify-center space-x-4">
-                    <Button onClick={() => router.push("/events-prediction")}>
-                        新しいイベント予測
-                    </Button>
-                    <Button onClick={() => router.push("/")} variant="outline">
-                        ホームに戻る
-                    </Button>
-                </div>
             </div>
 
             <Footer />

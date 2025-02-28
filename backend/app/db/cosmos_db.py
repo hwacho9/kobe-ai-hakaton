@@ -22,6 +22,7 @@ USERS_CONTAINER = "users"
 ARTISTS_CONTAINER = "artists"
 FAN_PREFERENCES_CONTAINER = "fan_preferences"
 EVENT_CACHE_CONTAINER = "event_cache"
+SAVINGS_HISTORY_CONTAINER = "savings_history"
 
 
 class CosmosDB:
@@ -51,6 +52,7 @@ class CosmosDB:
             self._create_container_if_not_exists(ARTISTS_CONTAINER, "/id")
             self._create_container_if_not_exists(FAN_PREFERENCES_CONTAINER, "/id")
             self._create_container_if_not_exists(EVENT_CACHE_CONTAINER, "/id")
+            self._create_container_if_not_exists(SAVINGS_HISTORY_CONTAINER, "/id")
 
             self.initialized = True
             logger.info("Cosmos DB initialization completed successfully")

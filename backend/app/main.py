@@ -34,6 +34,8 @@ app.add_middleware(
         "http://frontend:3000",  # Docker 컨테이너 내부 접근
         "*",  # 모든 오리진 허용 (개발 중에만 사용)
         "104.215.58.230",
+        "https://kobe-ai-hakaton.vercel.app/",
+        "https://kobe-ai-hakaton.vercel.app/api/events/multiple-costs",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -86,144 +88,6 @@ class CostRequestModel(BaseModel):
     events: List[EventItem]
 
 
-# 비용 계산 헬퍼 함수
-def calculate_transportation_cost(user_area: str, event_location: str) -> int:
-    """사용자 지역과 이벤트 위치에 따른 교통비 계산"""
-    # 일본 내 이동
-    if (
-        "Japan" in event_location
-        or "Tokyo" in event_location
-        or "Osaka" in event_location
-    ):
-        if user_area in ["東京", "Tokyo"] and "Tokyo" in event_location:
-            return 5000  # 도쿄 내 이동
-        elif user_area in ["大阪", "Osaka"] and "Osaka" in event_location:
-            return 5000  # 오사카 내 이동
-        else:
-            return 30000  # 일본 내 다른 지역으로 이동
-
-    # 한국으로 이동
-    elif "Korea" in event_location or "Seoul" in event_location:
-        return 50000  # 한국으로 이동 (항공권 + 현지 교통비)
-
-    # 기타 해외
-    else:
-        return 40000  # 기타 해외 이동
-
-
-def calculate_ticket_cost(event_type: str) -> int:
-    """이벤트 유형에 따른 티켓 비용 계산"""
-    event_type_lower = event_type.lower()
-
-    if "live" in event_type_lower or "concert" in event_type_lower:
-        return 15000  # 라이브/콘서트
-    elif "meeting" in event_type_lower or "fanmeeting" in event_type_lower:
-        return 12000  # 팬미팅
-    elif "album" in event_type_lower:
-        return 5000  # 앨범 발매 이벤트
-    else:
-        return 10000  # 기타 이벤트
-
-
-def calculate_hotel_cost(location: str) -> int:
-    """위치에 따른 숙박 비용 계산"""
-    if "Tokyo" in location:
-        return 20000  # 도쿄 숙박
-    elif "Osaka" in location:
-        return 15000  # 오사카 숙박
-    elif "Seoul" in location:
-        return 15000  # 서울 숙박
-    else:
-        return 18000  # 기타 지역 숙박
-
-
-def calculate_other_cost(event_type: str) -> int:
-    """이벤트 유형에 따른 기타 비용 계산"""
-    event_type_lower = event_type.lower()
-
-    if "live" in event_type_lower or "concert" in event_type_lower:
-        return 10000  # 라이브/콘서트 (굿즈, 식사 등)
-    elif "meeting" in event_type_lower or "fanmeeting" in event_type_lower:
-        return 8000  # 팬미팅 (굿즈, 식사 등)
-    elif "album" in event_type_lower:
-        return 3000  # 앨범 발매 이벤트
-    else:
-        return 5000  # 기타 이벤트
-
-
-def calculate_confidence(date_str: str) -> str:
-    """날짜 문자열에 따른 신뢰도 계산"""
-    try:
-        # YYYY-MM 형식 처리
-        if "-" in date_str:
-            parts = date_str.split("-")
-            if len(parts) >= 2:
-                year = int(parts[0])
-                month = int(parts[1])
-                date = datetime.datetime(year, month, 1)
-            else:
-                return "低"  # 날짜 형식 오류
-        else:
-            # 날짜 형식을 파싱할 수 없는 경우
-            return "低"  # 낮은 신뢰도
-
-        # 현재 날짜와의 차이 계산
-        now = datetime.datetime.now()
-        diff_months = (date.year - now.year) * 12 + (date.month - now.month)
-
-        # 신뢰도 결정
-        if diff_months <= 3:
-            return "高"  # 3개월 이내: 높은 신뢰도
-        elif diff_months <= 6:
-            return "中"  # 3~6개월: 중간 신뢰도
-        else:
-            return "低"  # 6개월 이상: 낮은 신뢰도
-    except:
-        return "低"  # 예외 발생 시 낮은 신뢰도
-
-
-def generate_recommendation(total_cost: int, event_count: int) -> str:
-    """총 비용과 이벤트 수에 따른 추천 메시지 생성"""
-    avg_cost = total_cost / max(event_count, 1)
-
-    if event_count > 1:
-        if total_cost > 500000:
-            return "複数のイベントに参加する予定があるため、予算を計画的に準備することをお勧めします。優先順位を決めて、最も重要なイベントに集中することも検討してください。"
-        else:
-            return "複数のイベントに参加する予定がありますが、総費用は比較的抑えられています。早めにチケットや宿泊先を予約すると、さらに費用を抑えられる可能性があります。"
-    else:
-        if avg_cost > 200000:
-            return "イベントの費用が高めです。早めに予算を準備し、交通手段や宿泊先の比較検討をすることで費用を抑えられる可能性があります。"
-        else:
-            return "イベントの費用は標準的な範囲内です。チケットの入手方法や宿泊先について事前に調査しておくことをお勧めします。"
-
-
-def generate_sample_goods(artist: str) -> List[Dict[str, Any]]:
-    """아티스트에 따른 샘플 굿즈 정보 생성"""
-    goods_types = ["フォトブック", "Tシャツ", "ペンライト", "キーホルダー", "ポスター"]
-    release_months = ["03月", "04月", "05月", "06月"]
-
-    # 1~3개의 굿즈 생성
-    count = random.randint(1, 3)
-    goods = []
-
-    for i in range(count):
-        goods_type = random.choice(goods_types)
-        release_month = random.choice(release_months)
-        price = random.randint(2500, 6000)
-
-        goods.append(
-            {
-                "goods_id": f"g-{uuid.uuid4().hex[:8]}",
-                "name": f"{artist} {goods_type}",
-                "release_date": f"2025年{release_month}",
-                "estimated_price": price,
-            }
-        )
-
-    return goods
-
-
 # 여러 이벤트의 비용을 계산하는 API
 @app.post("/api/events/multiple-costs")
 async def calculate_multiple_events_cost(
@@ -231,6 +95,7 @@ async def calculate_multiple_events_cost(
 ):
     """
     여러 이벤트의 예상 비용을 계산합니다.
+    모든 비용 예측 및 추천에 OpenAI를 사용합니다.
     """
     try:
         # 사용자 정보 가져오기
@@ -250,59 +115,372 @@ async def calculate_multiple_events_cost(
             "recommendation": "",
         }
 
-        total_cost = 0
-
-        # 각 이벤트에 대한 비용 계산
-        for event in request.events:
-            # 이벤트 위치에 따른 교통비 계산
-            transportation_cost = calculate_transportation_cost(
-                user_area, event.location
-            )
-
-            # 이벤트 유형에 따른 티켓 비용 계산
-            ticket_cost = calculate_ticket_cost(event.event_type)
-
-            # 숙박 비용 계산
-            hotel_cost = calculate_hotel_cost(event.location)
-
-            # 기타 비용 계산 (식사, 기념품 등)
-            other_cost = calculate_other_cost(event.event_type)
-
-            # 개별 이벤트 총 비용
-            event_total = transportation_cost + ticket_cost + hotel_cost + other_cost
-            total_cost += event_total
-
-            # 신뢰도 계산
-            confidence = calculate_confidence(event.date)
-
-            # 이벤트 정보 추가
-            event_info = {
-                "event_id": str(uuid.uuid4()),
-                "event_type": event.event_type,
-                "location": event.location,
-                "date": event.date,
-                "estimated_cost": {
-                    "transportation": transportation_cost,
-                    "ticket": ticket_cost,
-                    "hotel": hotel_cost,
-                    "other": other_cost,
-                },
-                "total_estimated": event_total,
-                "confidence": confidence,
-            }
-
-            result["upcoming_events"].append(event_info)
-
-        # 총 비용 업데이트
-        result["total_estimated"] = total_cost
-
-        # 추천 메시지 생성
-        result["recommendation"] = generate_recommendation(
-            total_cost, len(request.events)
+        # OpenAI 클라이언트 초기화
+        client = AzureOpenAI(
+            azure_endpoint=endpoint,
+            api_key=subscription_key,
+            api_version="2024-05-01-preview",
         )
 
-        # 굿즈 정보 추가
-        result["upcoming_goods"] = generate_sample_goods(request.artist)
+        # 이벤트 항목별 비용 예측을 위한 배치 처리
+        try:
+            # 아티스트 정보
+            artist_info = request.artist
+
+            # 모든 이벤트에 대한 정보를 텍스트로 준비
+            all_events_text = ""
+            for i, event in enumerate(request.events):
+                all_events_text += (
+                    f"{i+1}. {event.event_type} in {event.location} on {event.date}\n"
+                )
+
+            # 비용 예측 프롬프트
+            cost_prompt = [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "あなたはK-POPファンイベントの費用見積もり専門家です。ユーザーの地域と各イベントの種類、場所、日程を考慮して、正確な費用予測を提供してください。",
+                        }
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"以下のイベントそれぞれについて、費用見積もりをJSON形式で作成してください。\n\n"
+                            f"ユーザー地域: {user_area}\n"
+                            f"アーティスト: {artist_info}\n\n"
+                            f"イベント一覧:\n{all_events_text}\n\n"
+                            f"各イベントについて以下の情報を含むJSONの配列を提供してください。\n"
+                            f"1. 交通費 (transportation): 数値（円）\n"
+                            f"2. チケット代 (ticket): 数値（円）\n"
+                            f"3. 宿泊費 (hotel): 数値（円）\n"
+                            f"4. その他費用 (other): 数値（円）\n"
+                            f"5. 合計金額 (total): 数値（円）\n"
+                            f"6. 信頼度 (confidence): 文字列（'高', '中', '低'のいずれか）\n\n"
+                            f"回答は次の形式のJSONのみにしてください：\n"
+                            f"[\n"
+                            f"  {{\n"
+                            f'    "transportation": 10000,\n'
+                            f'    "ticket": 15000,\n'
+                            f'    "hotel": 20000,\n'
+                            f'    "other": 5000,\n'
+                            f'    "total": 50000,\n'
+                            f'    "confidence": "高"\n'
+                            f"  }},\n"
+                            f"  ...\n"
+                            f"]",
+                        }
+                    ],
+                },
+            ]
+
+            # OpenAI 요청
+            cost_completion = client.chat.completions.create(
+                model=deployment,
+                messages=cost_prompt,
+                max_tokens=800,
+                temperature=0.5,
+                top_p=0.95,
+                frequency_penalty=0,
+                presence_penalty=0,
+                stop=None,
+                stream=False,
+            )
+
+            # 응답 텍스트 추출
+            cost_response = cost_completion.choices[0].message.content.strip()
+
+            # JSON 형식 추출 (코드 블록이나 다른 텍스트가 포함되어 있을 수 있음)
+            import re
+            import json
+
+            # JSON 형식 추출 시도
+            json_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", cost_response)
+            if json_match:
+                cost_json = json_match.group(1)
+            else:
+                # 코드 블록이 없는 경우 전체 텍스트에서 JSON 형식 찾기
+                cost_json = re.search(r"\[\s*\{.*\}\s*\]", cost_response, re.DOTALL)
+                if cost_json:
+                    cost_json = cost_json.group(0)
+                else:
+                    cost_json = cost_response
+
+            # JSON 파싱
+            try:
+                cost_data = json.loads(cost_json)
+
+                # 각 이벤트에 대한 데이터 추가
+                total_cost = 0
+                for i, event in enumerate(request.events):
+                    if i < len(cost_data):  # 이벤트 수만큼만 처리
+                        event_cost = cost_data[i]
+
+                        # 숫자 값 명시적 변환
+                        transportation = int(float(event_cost.get("transportation", 0)))
+                        ticket = int(float(event_cost.get("ticket", 0)))
+                        hotel = int(float(event_cost.get("hotel", 0)))
+                        other = int(float(event_cost.get("other", 0)))
+                        event_total = int(float(event_cost.get("total", 0)))
+
+                        # 만약 total이 각 항목의 합과 다르다면 조정
+                        calculated_total = transportation + ticket + hotel + other
+                        if event_total != calculated_total:
+                            event_total = calculated_total
+
+                        # 이벤트 정보 구성
+                        event_info = {
+                            "event_id": str(uuid.uuid4()),
+                            "event_type": event.event_type,
+                            "location": event.location,
+                            "date": event.date,
+                            "estimated_cost": {
+                                "transportation": transportation,
+                                "ticket": ticket,
+                                "hotel": hotel,
+                                "other": other,
+                            },
+                            "total_estimated": event_total,
+                            "confidence": event_cost.get("confidence", "中"),
+                        }
+
+                        # 이벤트 총 비용 누적
+                        total_cost += event_total
+
+                        # 결과에 이벤트 추가
+                        result["upcoming_events"].append(event_info)
+
+                # 총 비용 업데이트 (정수로 변환)
+                result["total_estimated"] = int(total_cost)
+
+            except json.JSONDecodeError as e:
+                # JSON 파싱 실패 시 예비 처리
+                print(f"Error parsing cost JSON: {str(e)}")
+                # 기본값으로 이벤트 정보 생성
+                total_cost = 0
+                for event in request.events:
+                    # 이벤트 유형에 따른 기본 비용 설정
+                    if (
+                        "live" in event.event_type.lower()
+                        or "concert" in event.event_type.lower()
+                    ):
+                        transportation = 30000
+                        ticket = 15000
+                        hotel = 20000
+                        other = 10000
+                    elif "meeting" in event.event_type.lower():
+                        transportation = 20000
+                        ticket = 12000
+                        hotel = 15000
+                        other = 8000
+                    else:
+                        transportation = 10000
+                        ticket = 5000
+                        hotel = 0
+                        other = 5000
+
+                    event_total = transportation + ticket + hotel + other
+                    total_cost += event_total
+
+                    # 이벤트 정보 생성
+                    event_info = {
+                        "event_id": str(uuid.uuid4()),
+                        "event_type": event.event_type,
+                        "location": event.location,
+                        "date": event.date,
+                        "estimated_cost": {
+                            "transportation": transportation,
+                            "ticket": ticket,
+                            "hotel": hotel,
+                            "other": other,
+                        },
+                        "total_estimated": event_total,
+                        "confidence": "低",  # 기본값으로 낮은 신뢰도 설정
+                    }
+
+                    # 결과에 이벤트 추가
+                    result["upcoming_events"].append(event_info)
+
+                # 총 비용 업데이트
+                result["total_estimated"] = total_cost
+
+            # 추천 메시지 생성
+            recommendation_prompt = [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "あなたはKポップファンのための予算アドバイザーです。予算プランと節約のアドバイスを提供してください。",
+                        }
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"以下のイベント情報を基に、簡潔な予算アドバイス（1-2文）を提供してください。\n\nユーザー地域: {user_area}\nアーティスト: {artist_info}\n総費用: {result['total_estimated']}円\nイベント数: {len(result['upcoming_events'])}\n\n注意: 回答は100文字以内の簡潔な推奨文（1-2文）にしてください。",
+                        }
+                    ],
+                },
+            ]
+
+            # 추천 메시지 요청
+            recommendation_completion = client.chat.completions.create(
+                model=deployment,
+                messages=recommendation_prompt,
+                max_tokens=150,
+                temperature=0.7,
+                top_p=0.95,
+                frequency_penalty=0,
+                presence_penalty=0,
+                stop=None,
+                stream=False,
+            )
+
+            # 응답 텍스트 추출
+            result["recommendation"] = recommendation_completion.choices[
+                0
+            ].message.content.strip()
+
+            # 월별 저금 추천 계산 (6개월 기준)
+            monthly_savings = int(round(result["total_estimated"] / 6))
+            result["monthly_savings_suggestion"] = monthly_savings
+
+            # 굿즈 정보 예측
+            goods_prompt = [
+                {
+                    "role": "system",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "あなたはKポップアーティストのグッズ情報の専門家です。リアルなグッズ予測情報を提供してください。",
+                        }
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f'アーティスト「{artist_info}」の今後発売される可能性があるグッズを2-3点、以下のJSON形式で予測してください。必ず以下のJSONフォーマットで、日本語で回答してください：\n[\n  {{\n    "goods_id": "g-xxxxxxxx",\n    "name": "商品名",\n    "release_date": "2025年XX月",\n    "estimated_price": 金額\n  }},\n  ...\n]',
+                        }
+                    ],
+                },
+            ]
+
+            # 굿즈 예측 요청
+            goods_completion = client.chat.completions.create(
+                model=deployment,
+                messages=goods_prompt,
+                max_tokens=500,
+                temperature=0.7,
+                top_p=0.95,
+                frequency_penalty=0,
+                presence_penalty=0,
+                stop=None,
+                stream=False,
+            )
+
+            # 굿즈 정보 파싱
+            goods_response = goods_completion.choices[0].message.content.strip()
+
+            # JSON 형식 추출
+            json_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", goods_response)
+            if json_match:
+                goods_json = json_match.group(1)
+            else:
+                goods_json = re.search(r"\[\s*\{.*\}\s*\]", goods_response, re.DOTALL)
+                if goods_json:
+                    goods_json = goods_json.group(0)
+                else:
+                    goods_json = goods_response
+
+            try:
+                goods_data = json.loads(goods_json)
+
+                # 각 굿즈에 고유 ID 부여 및 가격 정수 변환
+                for item in goods_data:
+                    if "goods_id" not in item or not item["goods_id"].startswith("g-"):
+                        item["goods_id"] = f"g-{uuid.uuid4().hex[:8]}"
+
+                    # 가격 정수 변환
+                    if "estimated_price" in item:
+                        item["estimated_price"] = int(float(item["estimated_price"]))
+
+                result["upcoming_goods"] = goods_data
+
+            except json.JSONDecodeError:
+                print("Error parsing goods JSON")
+                result["upcoming_goods"] = []
+
+        except Exception as ai_error:
+            print(f"OpenAI processing error: {str(ai_error)}")
+            # OpenAI 처리에 실패할 경우 기본 처리 사용
+            total_cost = 0
+
+            # 이벤트별 기본 비용 계산
+            for event in request.events:
+                # 이벤트 유형에 따른 기본 비용 설정
+                if (
+                    "live" in event.event_type.lower()
+                    or "concert" in event.event_type.lower()
+                ):
+                    transportation = 30000
+                    ticket = 15000
+                    hotel = 20000
+                    other = 10000
+                elif "meeting" in event.event_type.lower():
+                    transportation = 20000
+                    ticket = 12000
+                    hotel = 15000
+                    other = 8000
+                else:
+                    transportation = 10000
+                    ticket = 5000
+                    hotel = 0
+                    other = 5000
+
+                event_total = transportation + ticket + hotel + other
+                total_cost += event_total
+
+                # 이벤트 정보 생성
+                event_info = {
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": event.event_type,
+                    "location": event.location,
+                    "date": event.date,
+                    "estimated_cost": {
+                        "transportation": transportation,
+                        "ticket": ticket,
+                        "hotel": hotel,
+                        "other": other,
+                    },
+                    "total_estimated": event_total,
+                    "confidence": "低",  # 기본값으로 낮은 신뢰도 설정
+                }
+
+                # 결과에 이벤트 추가
+                result["upcoming_events"].append(event_info)
+
+            # 총 비용 업데이트
+            result["total_estimated"] = total_cost
+
+            # 기본 추천 메시지 생성
+            result["recommendation"] = generate_recommendation(
+                total_cost, len(request.events)
+            )
+
+            # 월별 저금 추천 계산
+            result["monthly_savings_suggestion"] = int(round(total_cost / 6))
+
+            # 빈 굿즈 리스트
+            result["upcoming_goods"] = []
 
         return result
 
@@ -323,26 +501,127 @@ async def save_cost_data(
 ):
     """
     계산된 비용 데이터를 데이터베이스에 저장합니다.
+    사용자 정보에 총 예상 비용(total_estimated)과 현재 저금액(current_savings)도 업데이트합니다.
     """
     try:
         # 사용자 ID 추가
         user_id = current_user.get("userId")
 
-        # 저장할 데이터 구성
+        # 데이터베이스에 저장할 원본 데이터 유지 (깊은 복사 사용)
+        import copy
+
+        original_cost_data = copy.deepcopy(cost_data)
+
+        # 원본 데이터 로깅
+        print(f"Original data from frontend: {json.dumps(original_cost_data)}")
+
+        # 동일한 데이터가 이미 저장됐는지 확인
+        collection = await get_collection("event_costs")
+        if collection:
+            # 최근 1시간 이내 동일한 아티스트와 이벤트 수의 저장 데이터 확인
+            one_hour_ago = (
+                datetime.datetime.now() - datetime.timedelta(hours=1)
+            ).isoformat()
+            artist = cost_data.get("artist", "")
+            event_count = len(cost_data.get("upcoming_events", []))
+
+            query = f"""
+            SELECT * FROM c 
+            WHERE c.user_id = '{user_id}' 
+            AND c.artist = '{artist}' 
+            AND ARRAY_LENGTH(c.upcoming_events) = {event_count}
+            AND c.saved_at > '{one_hour_ago}'
+            """
+
+            existing_items = list(
+                collection.query_items(query=query, enable_cross_partition_query=True)
+            )
+
+            if existing_items:
+                print(
+                    f"Found existing cost data for user {user_id} and artist {artist}. Skipping save."
+                )
+                return {
+                    "message": "既存の費用データが見つかりました。重複保存はスキップされました。",
+                    "id": existing_items[0]["id"],
+                }
+
+        # 저장할 데이터 구성 (ID 재생성)
         save_data = {
             "id": str(uuid.uuid4()),  # 문서 ID
             "user_id": user_id,
             "saved_at": datetime.datetime.now().isoformat(),
-            **cost_data,
+            **original_cost_data,  # 원본 데이터 사용
         }
 
-        # DB에 저장 (Cosmos DB 또는 다른 데이터베이스)
-        collection = await get_collection("event_costs")
+        # 저장 전 데이터 확인 로그
+        print(f"Saving cost data to database: {json.dumps(save_data)}")
+
+        # 특정 이벤트 필드 로깅 (문제 디버깅을 위해)
+        for idx, event in enumerate(save_data.get("upcoming_events", [])):
+            print(f"Event {idx + 1}:")
+            print(f"  - event_id: {event.get('event_id')}")
+            print(f"  - event_type: {event.get('event_type')}")
+            print(f"  - location: {event.get('location')}")
+            print(f"  - hotel cost: {event.get('estimated_cost', {}).get('hotel')}")
+            print(f"  - total_estimated: {event.get('total_estimated')}")
+
+        # DB에 저장
         if collection:
             collection.create_item(save_data)
             print(f"Cost data saved to database for user {user_id}")
         else:
             print("No collection available, using mock mode")
+
+        # 사용자 정보에 총 예상 비용과 저금액 업데이트
+        try:
+            # 총 예상 비용 가져오기
+            total_estimated = cost_data.get("total_estimated", 0)
+            # 명시적 형변환 없이 원본 값 유지
+
+            # 사용자 컬렉션 가져오기
+            users_collection = await get_collection("users")
+            if users_collection:
+                # 사용자 문서 쿼리
+                query = f"SELECT * FROM c WHERE c.userId = '{user_id}'"
+                user_items = list(
+                    users_collection.query_items(
+                        query=query, enable_cross_partition_query=True
+                    )
+                )
+
+                if user_items:
+                    user_doc = user_items[0]
+
+                    # 현재 예상 비용 가져오기
+                    current_total = user_doc.get("total_estimated_expenses", 0)
+                    # 명시적 형변환 없이 원본 합계 계산
+                    new_total = current_total + total_estimated
+
+                    # 사용자 문서 업데이트
+                    user_doc["total_estimated_expenses"] = new_total
+
+                    # 저금액이 없는 경우 초기화
+                    if "current_savings" not in user_doc:
+                        user_doc["current_savings"] = 0
+
+                    # 월별 저금 제안 추가 (계산된 경우)
+                    if "monthly_savings_suggestion" in cost_data:
+                        user_doc["monthly_savings_suggestion"] = cost_data[
+                            "monthly_savings_suggestion"
+                        ]
+
+                    # 사용자 문서 업데이트
+                    users_collection.replace_item(user_doc["id"], user_doc)
+                    print(
+                        f"Updated user {user_id} with total expenses: {new_total} and monthly savings: {user_doc.get('monthly_savings_suggestion')}"
+                    )
+                else:
+                    print(f"User {user_id} not found in users collection")
+            else:
+                print("Users collection not available")
+        except Exception as user_update_error:
+            print(f"Error updating user info: {str(user_update_error)}")
 
         return {"message": "費用データが正常に保存されました", "id": save_data["id"]}
 
@@ -761,6 +1040,8 @@ async def get_user_event_costs(current_user: dict = Depends(get_current_user)):
             collection.query_items(query=query, enable_cross_partition_query=True)
         )
 
+        print(f"cost_items: {cost_items}")
+
         # 총 예상 비용 합계 계산
         total_estimated = sum(
             item.get("total_estimated", 0)
@@ -768,9 +1049,22 @@ async def get_user_event_costs(current_user: dict = Depends(get_current_user)):
             if "total_estimated" in item
         )
 
+        # 사용자의 현재 저금액 가져오기
+        users_collection = await get_collection("users")
+        if users_collection:
+            query = f"SELECT c.current_savings FROM c WHERE c.userId = '{user_id}'"
+            user_items = list(
+                users_collection.query_items(
+                    query=query, enable_cross_partition_query=True
+                )
+            )
+            if user_items and len(user_items) > 0:
+                current_savings = user_items[0].get("current_savings", 0)
+
         return {
             "costs": cost_items,
             "total_estimated": total_estimated,
+            "total_savings": current_savings,
             "count": len(cost_items),
         }
 
@@ -781,4 +1075,165 @@ async def get_user_event_costs(current_user: dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=500,
             detail=f"費用データの取得中にエラーが発生しました: {str(e)}",
+        )
+
+
+# 사용자 저금액 추가 API
+@app.post("/api/savings/add")
+async def add_user_savings(
+    savings_data: Dict[str, Any] = Body(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    사용자의 저금액을 추가하고 이력을 저장합니다.
+    """
+    try:
+        # 사용자 ID 가져오기
+        user_id = current_user.get("userId")
+
+        # 저금액 가져오기
+        amount = savings_data.get("amount", 0)
+
+        # 숫자 타입으로 변환
+        try:
+            amount = int(float(amount))
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="金額は数値で入力してください")
+
+        if amount <= 0:
+            raise HTTPException(
+                status_code=400, detail="金額は1円以上で入力してください"
+            )
+
+        # 메모 가져오기 (옵션)
+        memo = savings_data.get("memo", "")
+
+        # 현재 날짜
+        saved_at = datetime.datetime.now().isoformat()
+
+        # 저금 이력 데이터 구성
+        savings_history_item = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "amount": amount,
+            "memo": memo,
+            "saved_at": saved_at,
+        }
+
+        # 저금 이력 저장
+        savings_collection = await get_collection("savings_history")
+        if savings_collection:
+            savings_collection.create_item(savings_history_item)
+            print(f"Savings history saved: {amount} yen for user {user_id}")
+        else:
+            print("No savings_history collection available")
+
+        # 사용자 정보 업데이트 (current_savings 증가)
+        users_collection = await get_collection("users")
+        if users_collection:
+            # 사용자 문서 쿼리
+            query = f"SELECT * FROM c WHERE c.userId = '{user_id}'"
+            user_items = list(
+                users_collection.query_items(
+                    query=query, enable_cross_partition_query=True
+                )
+            )
+
+            if user_items:
+                user_doc = user_items[0]
+
+                # 현재 저금액 가져오기
+                current_savings = user_doc.get("current_savings", 0)
+
+                # 저금액 추가
+                new_savings = current_savings + amount
+
+                # 사용자 문서 업데이트
+                user_doc["current_savings"] = new_savings
+
+                # 사용자 문서 업데이트
+                users_collection.replace_item(user_doc["id"], user_doc)
+                print(f"Updated user {user_id} savings to {new_savings}")
+
+                return {
+                    "message": "貯金が正常に追加されました",
+                    "current_savings": new_savings,
+                    "added_amount": amount,
+                }
+            else:
+                raise HTTPException(status_code=404, detail="ユーザーが見つかりません")
+        else:
+            raise HTTPException(
+                status_code=500, detail="ユーザーコレクションにアクセスできません"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"貯金データの保存中にエラーが発生しました: {str(e)}",
+        )
+
+
+# 사용자 저금 이력 가져오기 API
+@app.get("/api/savings/history")
+async def get_savings_history(current_user: dict = Depends(get_current_user)):
+    """
+    사용자의 저금 이력을 가져옵니다.
+    """
+    try:
+        # 사용자 ID 가져오기
+        user_id = current_user.get("userId")
+
+        # DB에서 사용자 저금 이력 가져오기
+        collection = await get_collection("savings_history")
+        if not collection:
+            return {"message": "データを取得できません", "history": [], "total": 0}
+
+        # 사용자 ID로 저금 이력 쿼리 (최신 순으로 정렬)
+        query = (
+            f"SELECT * FROM c WHERE c.user_id = '{user_id}' ORDER BY c.saved_at DESC"
+        )
+        history_items = list(
+            collection.query_items(query=query, enable_cross_partition_query=True)
+        )
+
+        # 총 저금액 계산
+        total_savings = sum(
+            item.get("amount", 0) for item in history_items if "amount" in item
+        )
+
+        # 현재 저금액 확인 (사용자 문서에서)
+        users_collection = await get_collection("users")
+        current_savings = 0
+
+        if users_collection:
+            query = f"SELECT c.current_savings FROM c WHERE c.userId = '{user_id}'"
+            user_items = list(
+                users_collection.query_items(
+                    query=query, enable_cross_partition_query=True
+                )
+            )
+
+            if user_items and "current_savings" in user_items[0]:
+                current_savings = user_items[0]["current_savings"]
+
+        return {
+            "history": history_items,
+            "total": total_savings,
+            "current_savings": current_savings,
+            "count": len(history_items),
+        }
+
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"貯金履歴の取得中にエラーが発生しました: {str(e)}",
         )

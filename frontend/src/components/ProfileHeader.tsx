@@ -4,7 +4,7 @@ import { Bell } from "lucide-react";
 
 export default function ProfileHeader() {
     return (
-        <header className="flex items-center justify-between bg-black px-4 py-4">
+        <header className="flex items-center justify-between bg-[#242424] px-4 py-4">
             {/* タイトル */}
             <h1 className="text-pink-300 text-xl font-bold">my page</h1>
 
