@@ -27,6 +27,13 @@ const ARTIST_IMAGES: { [key: string]: string } = {
   twice: "/images/twice.JPG",
   aespa: "/images/aespa.JPG",
   seventeen: "/images/seventeen.JPG",
+  exo: "/images/exo.jpg",
+  redvelet: "/images/redvelvet.jpg",
+  nct: "/images/nct.jpg",
+  gidle: "/images/gidle.jpg",
+  ive: "/images/ive.jpg",
+  newjeans: "/images/newjeans.jpg",
+  txt: "/images/txt.jpg",
 };
 
 export default function RegisterArtistPage() {
