@@ -81,7 +81,7 @@ export default function SavingsCircle({
           </defs>
 
           {/* 円の上部に「目標: 〇〇円」を表示 */}
-          <text x={center} y="10" fill="white" fontSize="7" textAnchor="middle">
+          <text x={center} y="18" fill="white" fontSize="8" textAnchor="middle">
             目標: {savingsGoal.toLocaleString()}円
           </text>
 
