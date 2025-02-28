@@ -121,7 +121,7 @@ export default function SavingsCircle({
                         cx={markerX}
                         cy={markerY}
                         r="4"
-                        fill="black"
+                        fill="#242424"
                         stroke="#F8A4BD"
                         strokeWidth="2"
                     />
@@ -169,7 +169,7 @@ export default function SavingsCircle({
                                     y1={lineOuterY}
                                     x2={lineInnerX}
                                     y2={lineInnerY}
-                                    stroke="black"
+                                    stroke="#242424"
                                     strokeWidth="1"
                                 />
                                 {index < sortedEvents.length - 1 && (

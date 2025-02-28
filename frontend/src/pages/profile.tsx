@@ -44,7 +44,7 @@ export default function ProfilePage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-black text-white flex items-center justify-center">
+            <div className="min-h-screen bg-[#242424] text-white flex items-center justify-center">
                 <p className="text-lg font-medium">
                     プロフィール情報を読み込み中...
                 </p>
@@ -54,7 +54,7 @@ export default function ProfilePage() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-[#242424] text-white flex flex-col items-center justify-center p-4">
                 <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">
                     <p className="font-medium">エラーが発生しました</p>
                     <p>{error}</p>
@@ -71,12 +71,12 @@ export default function ProfilePage() {
     const travelDistances = ["国内", "アジア", "世界"];
 
     return (
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-[#242424] text-white">
             <ProfileHeader />
             {/* コンテナの下部パディングを pb-8 に調整 */}
             <div className="container max-w-md mx-auto px-4 pb-8">
                 {/* ユーザー情報カード */}
-                <div className="bg-white text-black rounded-lg shadow-md p-4 mt-4 mb-6">
+                <div className="bg-white text-[#242424] rounded-lg shadow-md p-4 mt-4 mb-6">
                     <h2 className="text-lg font-bold mb-1">
                         {user?.username || "No Name"}さん
                     </h2>
@@ -86,7 +86,9 @@ export default function ProfilePage() {
                     <p className="text-sm text-gray-700 mb-4">
                         居住地域：{area}
                     </p>
-                    <Button variant="default" className="bg-black text-white">
+                    <Button
+                        variant="default"
+                        className="bg-[#242424] text-white">
                         ユーザー情報を確認・変更
                     </Button>
                 </div>
@@ -108,7 +110,7 @@ export default function ProfilePage() {
                             />
                         );
                     })}
-                    <div className="w-24 h-24 bg-black border border-gray-700 text-white rounded-lg flex items-center justify-center">
+                    <div className="w-24 h-24 bg-[#242424] border border-gray-700 text-white rounded-lg flex items-center justify-center">
                         +
                     </div>
                 </div>
@@ -119,7 +121,7 @@ export default function ProfilePage() {
             </h3>
             {/* イベントタイプのカード */}
             <div className="bg-gradient-to-b from-pink-400 to-pink-200 w-full px-4 py-6 rounded-t-3xl mb-4">
-                <h3 className="text-base font-semibold mb-2 text-black">
+                <h3 className="text-base font-semibold mb-2 text-[#242424]">
                     イベントタイプ
                 </h3>
                 <div className="flex space-x-2 overflow-x-auto">
@@ -127,18 +129,18 @@ export default function ProfilePage() {
                         interests.map((item: string) => (
                             <div
                                 key={item}
-                                className="bg-white text-black px-2 py-1 rounded-full text-sm whitespace-nowrap">
+                                className="bg-white text-[#242424] px-2 py-1 rounded-full text-sm whitespace-nowrap">
                                 {item}
                             </div>
                         ))
                     ) : (
-                        <span className="text-black">未設定</span>
+                        <span className="text-[#242424]">未設定</span>
                     )}
                 </div>
             </div>
             {/* 遠征距離のカード
             <div className="bg-gradient-to-b from-pink-400 to-pink-200 w-full px-4 py-6 rounded-t-3xl -mt-4">
-                <h3 className="text-base font-semibold mb-2 text-black">
+                <h3 className="text-base font-semibold mb-2 text-[#242424]">
                     遠征距離
                 </h3>
                 <div className="flex space-x-2 overflow-x-auto">
@@ -146,12 +148,12 @@ export default function ProfilePage() {
                         travelDistances.map((item: string) => (
                             <div
                                 key={item}
-                                className="bg-white text-black px-2 py-1 rounded-full text-sm whitespace-nowrap">
+                                className="bg-white text-[#242424] px-2 py-1 rounded-full text-sm whitespace-nowrap">
                                 {item}
                             </div>
                         ))
                     ) : (
-                        <span className="text-black">未設定</span>
+                        <span className="text-[#242424]">未設定</span>
                     )}
                 </div>
             </div> */}

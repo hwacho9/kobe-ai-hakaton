@@ -102,19 +102,14 @@ export default function Home({ idols = [] }: HomeProps) {
     ];
 
     return (
-        // 外側のdivに min-h-screen とグラデーション背景を指定
-        <div
-            className="min-h-screen"
-            style={{
-                background:
-                    "linear-gradient(to bottom, #000000 40%, #E8D8DC 40%)",
-            }}>
-            {/* コンテナ部分は通常の余白等の設定 */}
+        // 외측의 div는 #242424 배경으로 시작
+        <div className="min-h-screen bg-[#242424]">
+            {/* 컨테이너 부분은 정상적인 여백 등의 설정 */}
             <div className="container mx-auto p-4">
-                {/* ヘッダー */}
+                {/* 헤더 */}
                 <Header username={user?.username} />
 
-                {/* ヘッダー下にボタン群 */}
+                {/* 헤더 아래 버튼 그룹 */}
                 {isClient && isAuthenticated && (
                     <div className="flex flex-col items-end mt-3">
                         <button
@@ -130,10 +125,10 @@ export default function Home({ idols = [] }: HomeProps) {
                     </div>
                 )}
 
-                {/* SavingsCircle コンポーネント（画面サイズが大きい場合に大きく表示） */}
+                {/* SavingsCircle 컴포넌트 - #242424 배경 유지 */}
                 <div className="w-full md:w-3/4 mx-auto mb-6">
                     {isLoadingCosts ? (
-                        <div className="text-center py-10">
+                        <div className="text-center py-10 text-white">
                             <p>データロード中...</p>
                         </div>
                     ) : (
@@ -145,19 +140,22 @@ export default function Home({ idols = [] }: HomeProps) {
                     )}
                 </div>
 
-                {/* アイドルリスト */}
-                <IdolList idols={idols} />
+                {/* 아이돌 목록부터 배경색 변경 */}
+                <div className="bg-[#E8D8DC] pt-5 pb-10 -mx-4 px-4">
+                    {/* 아이돌 리스트 */}
+                    <IdolList idols={idols} />
 
-                {/* 貯金履歴リスト */}
-                <SavingsList
-                    savings={savingsHistory}
-                    isLoading={isLoadingSavings}
-                />
+                    {/* 저금 내역 리스트 */}
+                    <SavingsList
+                        savings={savingsHistory}
+                        isLoading={isLoadingSavings}
+                    />
+                </div>
 
-                {/* フッター */}
+                {/* 푸터 */}
                 <Footer />
 
-                {/* 貯金追加ボタン */}
+                {/* 저금 추가 버튼 */}
                 <AddSavingButton onSavingsAdded={handleSavingsAdded} />
             </div>
         </div>
