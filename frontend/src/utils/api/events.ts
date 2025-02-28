@@ -298,26 +298,25 @@ export async function getUserEventCosts(): Promise<UserCostsResponse> {
 }
 
 /**
- * 저금 내역을 가져오는 API 호출
- * @returns 저금 내역 목록과 총 저금액
+ * 유저의 저금 기록을 가져오는 함수
+ * @returns {Promise<{history: SavingsHistory[], total: number}>} 저금 기록 배열과 총액
  */
 export async function getSavingsHistory(): Promise<{
     history: SavingsHistory[];
     total: number;
 }> {
+    // localStorage에서 토큰 가져오기
+    const token = localStorage.getItem("auth-storage")
+        ? JSON.parse(localStorage.getItem("auth-storage") || "{}").state?.token
+        : null;
+
+    if (!token) {
+        throw new Error("인증 토큰이 없습니다. 로그인이 필요합니다.");
+    }
+
     try {
-        const token = localStorage.getItem("auth-storage")
-            ? JSON.parse(localStorage.getItem("auth-storage") || "{}").state
-                  ?.token
-            : null;
-
-        if (!token) {
-            throw new Error("認証トークンがありません");
-        }
-
-        console.log("Fetching savings history from backend");
-
-        const response = await fetch(`${API_BASE_URL}/api/savings/history`, {
+        // 상대 경로로 Next.js API 라우트 호출
+        const response = await fetch(`/api/savings/history`, {
             method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -326,63 +325,61 @@ export async function getSavingsHistory(): Promise<{
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || "貯金履歴の取得に失敗しました");
+            throw new Error("저금 데이터를 가져오는데 실패했습니다.");
         }
 
         const data = await response.json();
-        console.log("Savings history data:", data);
-        return data;
-    } catch (error: any) {
-        console.error("Failed to fetch savings history:", error);
+        return {
+            history: data.history || [],
+            total: data.total || 0,
+        };
+    } catch (error) {
+        console.error("Error fetching savings history:", error);
         throw error;
     }
 }
 
 /**
- * 새 저금액을 추가하는 API 호출
- * @param amount 저금액
- * @param memo 메모 (선택사항)
- * @returns 추가된 저금 정보
+ * 새로운 저금액을 추가하는 함수
+ * @param {number} amount - 추가할 금액
+ * @param {string} memo - 메모 (선택사항)
+ * @returns {Promise<{success: boolean, message: string}>} 성공 여부와 메시지
  */
 export async function addSavings(
     amount: number,
-    memo?: string
+    memo: string = ""
 ): Promise<{ success: boolean; message: string }> {
+    // localStorage에서 토큰 가져오기
+    const token = localStorage.getItem("auth-storage")
+        ? JSON.parse(localStorage.getItem("auth-storage") || "{}").state?.token
+        : null;
+
+    if (!token) {
+        throw new Error("인증 토큰이 없습니다. 로그인이 필요합니다.");
+    }
+
     try {
-        const token = localStorage.getItem("auth-storage")
-            ? JSON.parse(localStorage.getItem("auth-storage") || "{}").state
-                  ?.token
-            : null;
-
-        if (!token) {
-            throw new Error("認証トークンがありません");
-        }
-
-        console.log(`Adding savings: ${amount}円, memo: ${memo}`);
-
-        const response = await fetch(`${API_BASE_URL}/api/savings/add`, {
+        // 상대 경로로 Next.js API 라우트 호출
+        const response = await fetch(`/api/savings/add`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                amount,
-                memo: memo || "",
-            }),
+            body: JSON.stringify({ amount, memo: memo || "" }),
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || "貯金の追加に失敗しました");
+            throw new Error("저금 추가에 실패했습니다.");
         }
 
         const data = await response.json();
-        console.log("Savings added:", data);
-        return data;
-    } catch (error: any) {
-        console.error("Failed to add savings:", error);
+        return {
+            success: true,
+            message: data.message || "저금이 성공적으로 추가되었습니다.",
+        };
+    } catch (error) {
+        console.error("Error adding savings:", error);
         throw error;
     }
 }

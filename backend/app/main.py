@@ -34,6 +34,8 @@ app.add_middleware(
         "http://frontend:3000",  # Docker 컨테이너 내부 접근
         "*",  # 모든 오리진 허용 (개발 중에만 사용)
         "104.215.58.230",
+        "https://kobe-ai-hakaton.vercel.app/",
+        "https://kobe-ai-hakaton.vercel.app/api/events/multiple-costs",
     ],
     allow_credentials=True,
     allow_methods=["*"],
